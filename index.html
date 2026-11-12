@@ -1431,7 +1431,7 @@ function drawLogo(ctx, x, y, size, color) {
   ctx.save(); ctx.translate(x, y); ctx.scale(size / 40, size / 40); ctx.strokeStyle = color; ctx.lineWidth = 4.6; ctx.lineCap = 'square';
   LOGO_PATHS.forEach(d => ctx.stroke(new Path2D(d))); ctx.lineCap = 'butt'; ctx.stroke(new Path2D('M9.5 17v3.5M30.5 23v-3.5')); ctx.restore();
 }
-const SHARE_NAME = 'Piker Pro : Tom Maker';
+const SHARE_NAME = 'Picker Pro : Tom Maker';
 const TH = '"Anuphan", sans-serif', DS = '"Lexend", "Anuphan", sans-serif';
 async function renderCard(L, title, kind) {
   await fontsReady();
