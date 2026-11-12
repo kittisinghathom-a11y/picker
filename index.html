@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#F2F1ED">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Picker">
+<meta name="apple-mobile-web-app-title" content="Picker Pro">
 <meta name="description" content="Picker — จิ้มของจริง ได้สีจริง วัดสีด้วยกล้องมือถือ + แอปเก็บสี ส่งค่าสีไปใช้งานต่อได้ทันที">
-<title>Picker</title>
+<title>Picker Pro</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -458,7 +458,7 @@ const P = {
 const ic = (n, s = 22, sw = 1.7) => `<svg class="i" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n] || ''}</svg>`;
 const LOGO_PATHS = ['M31 10.5H14.5a5 5 0 0 0-5 5V17', 'M9 29.5h16.5a5 5 0 0 0 5-5V23'];
 const logoMark = (sw = 4.6) => `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="square" aria-hidden="true">${LOGO_PATHS.map(d => `<path d="${d}"/>`).join('')}<path d="M9.5 17v3.5M30.5 23v-3.5" stroke-linecap="butt"/></svg>`;
-$$('[data-logo]').forEach(e => e.innerHTML = `${logoMark()}samecor.<em>Picker</em>`);
+$$('[data-logo]').forEach(e => e.innerHTML = `${logoMark()}Picker Pro`);
 $$('[data-logo-art]').forEach(e => e.innerHTML = logoMark(3.4));
 $$('[data-ic]').forEach(e => e.outerHTML = ic(e.dataset.ic, 22));
 
