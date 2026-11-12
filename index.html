@@ -1258,7 +1258,7 @@ function postSheet(p) {
     <div class="strip" style="margin-top:10px;height:50px">${stripHtml(p.c, 'button', 'ref')}</div>
     <div style="margin:14px 2px 6px"><b style="font-size:18px">${esc(p.n)}</b><div class="sub">${esc(p.mine ? (S.me || 'ฉัน') : p.a)} · ${ago(p.t)} · ${p.c.length} สี</div></div>
     <div class="card flush" style="background:var(--bg)">${p.c.map(h => `<div class="crow" style="grid-template-columns:44px 1fr 44px"><div class="sw" style="width:44px;height:44px;background:${h}"></div><div><b style="font-size:15px">${h}</b><span>${nameOf(h)}</span></div><button class="cpy" data-copy="${h}">${ic('copy', 19)}</button></div>`).join('')}</div>
-    <div class="row" style="margin-top:14px"><button class="btn soft grow" data-act="sh">${ic('share', 18)}แชร์ลิงก์</button><button class="btn pri grow" data-act="im">${ic('bookmark', 18)}เก็บเข้าคลัง</button></div>`,
+    <div class="row" style="margin-top:14px"><button class="btn soft grow" data-act="sh">${ic('share', 18)}แชร์</button><button class="btn pri grow" data-act="im">${ic('bookmark', 18)}เก็บเข้าคลัง</button></div>`,
     () => ({ ref: t => refColorSheet(t.dataset.hex), sh: () => sharePalette(p.n, p.c), im: () => { closeSheet(); importPalette(p.n, p.c, p.thumb); } }));
 }
 function importPalette(name, hexes, thumb) {
@@ -1267,10 +1267,11 @@ function importPalette(name, hexes, thumb) {
   save(); refreshAll(); toast(`เก็บ “${name}” ${hexes.length} สีเข้าคลังแล้ว`, 'เปิด', () => openGroup(g.id));
 }
 const shareLink = (name, hexes) => location.origin + location.pathname + '#p=' + encodeURIComponent(name) + '~' + hexes.map(h => h.slice(1)).join('-');
+const shareText = (name, hexes) => `ชุดสี “${name}”\n${hexes.join('  ')}\n\n${SHARE_NAME}`;
 async function sharePalette(name, hexes) {
-  const url = shareLink(name, hexes.slice(0, 24));
-  if (navigator.share && matchMedia('(pointer:coarse)').matches) { try { await navigator.share({ title: 'Picker · ' + name, text: `ชุดสี “${name}” ${hexes.join(' ')}`, url }); return; } catch (e) { if (e.name === 'AbortError') return; } }
-  copy(url, 'ลิงก์ชุดสี');
+  const text = shareText(name, hexes.slice(0, 24));
+  if (navigator.share && matchMedia('(pointer:coarse)').matches) { try { await navigator.share({ title: SHARE_NAME, text }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+  copy(text, 'ข้อความชุดสี');
 }
 function shareToCommunity(g) {
   const cs = groupColors(g.id); if (!cs.length) return toast('กลุ่มนี้ยังไม่มีสี');
@@ -1322,8 +1323,8 @@ function openExport(o) {
   const one = L.length === 1;
   const render = () => `
     <h3 class="st">ส่งออก &amp; แชร์</h3><div class="sub">${esc(o.title)} · ${L.length} สี</div>
-    <div class="xsec"><h4>Share link</h4><div class="sub">เปิดดูได้ไม่ต้องล็อกอิน · มีแค่โค้ดสีกับชื่อสี</div>
-      <div class="xbtns"><button class="xb" data-act="link">${ic('link', 18)}Copy link</button>${navigator.share ? `<button class="xb" data-act="nshare">${ic('share', 18)}แชร์…</button>` : ''}</div></div>
+    <div class="xsec"><h4>Share</h4><div class="sub">ส่งชื่อสีกับโค้ดสี ลงท้ายด้วย ${SHARE_NAME}</div>
+      <div class="xbtns"><button class="xb" data-act="text">${ic('copy', 18)}คัดลอกข้อความ</button>${navigator.share ? `<button class="xb" data-act="nshare">${ic('share', 18)}แชร์…</button>` : ''}<button class="xb" data-act="link">${ic('link', 18)}ลิงก์นำเข้า <small>· มีเว็บไซต์</small></button></div></div>
     <div class="xsec"><h4>Copy as code <button class="more" data-act="mc">${st.moreCode ? 'Less' : 'More'} ${ic('chev', 15)}</button></h4>
       <div class="xbtns">${[['hex', 'HEX'], ['rgb', 'RGB'], ['css', 'CSS'], ['tailwind', 'Tailwind']].concat(st.moreCode ? [['hsl', 'HSL'], ['lab', 'Lab'], ['scss', 'SCSS'], ['json', 'JSON'], ['swift', 'SwiftUI'], ['android', 'Android'], ['flutter', 'Flutter']] : []).map(([k, n]) => `<button class="xb" data-act="code" data-k="${k}">${n}</button>`).join('')}</div></div>
     <div class="xsec"><h4>Image</h4>
@@ -1341,6 +1342,7 @@ function openExport(o) {
     mc: () => { st.moreCode = !st.moreCode; rerender(); },
     md: () => { st.moreDl = !st.moreDl; rerender(); },
     link: () => copy(shareLink(o.title, L.map(c => c.hex)), 'ลิงก์'),
+    text: () => copy(shareText(o.title, L.map(c => c.hex)), 'ข้อความ'),
     nshare: () => sharePalette(o.title, L.map(c => c.hex)),
     code: t => { const k = t.dataset.k; copy(one && k === 'hex' ? L[0].hex : CODE[k](L), t.textContent.trim()); },
     img: async t => deliver(await renderCard(L, o.title, t.dataset.k), `picker-${slug(o.title, 1)}-${t.dataset.k}.png`),
@@ -1373,7 +1375,7 @@ async function openInApp(k, L, title) {
 async function deliver(blob, filename) {
   const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
   if (matchMedia('(pointer:coarse)').matches && navigator.canShare?.({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: filename }); return; } catch (e) { if (e.name === 'AbortError') return; }
+    try { await navigator.share({ files: [file], title: SHARE_NAME }); return; } catch (e) { if (e.name === 'AbortError') return; }
   }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
@@ -1429,6 +1431,7 @@ function drawLogo(ctx, x, y, size, color) {
   ctx.save(); ctx.translate(x, y); ctx.scale(size / 40, size / 40); ctx.strokeStyle = color; ctx.lineWidth = 4.6; ctx.lineCap = 'square';
   LOGO_PATHS.forEach(d => ctx.stroke(new Path2D(d))); ctx.lineCap = 'butt'; ctx.stroke(new Path2D('M9.5 17v3.5M30.5 23v-3.5')); ctx.restore();
 }
+const SHARE_NAME = 'Piker Pro : Tom Maker';
 const TH = '"Anuphan", sans-serif', DS = '"Lexend", "Anuphan", sans-serif';
 async function renderCard(L, title, kind) {
   await fontsReady();
@@ -1439,7 +1442,7 @@ async function renderCard(L, title, kind) {
   x.fillStyle = '#262624'; x.font = `300 ${Math.round(Math.min(W, H) * .056)}px ${TH}`; x.textBaseline = 'alphabetic';
   x.fillText(L.length === 1 ? L[0].name : title, pad, pad + Math.min(W, H) * .05);
   x.fillStyle = '#86837B'; x.font = `400 ${Math.round(Math.min(W, H) * .022)}px ${DS}`;
-  x.fillText(L.length === 1 ? `Color #${L[0].no || 1} · ${SRC_EN[L[0].source] || 'Saved'}` : `${L.length} colors · Picker palette`, pad, pad + Math.min(W, H) * .095);
+  x.fillText(L.length === 1 ? `Color #${L[0].no || 1} · ${SRC_EN[L[0].source] || 'Saved'}` : `${L.length} colors`, pad, pad + Math.min(W, H) * .095);
   const top = pad + Math.min(W, H) * .14, bot = H - foot - pad * .4, aw = W - pad * 2, ah = bot - top;
   const fs = Math.min(W, H);
   const label = (c, bx, by, bw, bh, big) => {
@@ -1459,10 +1462,8 @@ async function renderCard(L, title, kind) {
     });
   }
   const fy = H - pad * .9, ls = Math.round(fs * .03);
-  drawLogo(x, pad, fy - ls * 1.05, ls * 1.3, '#E8432B');
-  x.fillStyle = '#262624'; x.font = `300 ${ls}px ${DS}`; x.fillText('samecor.', pad + ls * 1.6, fy);
-  const wm = x.measureText('samecor. ').width; x.font = `400 ${ls}px ${DS}`; x.fillText('Picker', pad + ls * 1.6 + wm, fy);
-  x.fillStyle = '#86837B'; x.font = `300 ${Math.round(ls * .8)}px ${DS}`; x.textAlign = 'right'; x.fillText(location.host || 'picker', W - pad, fy);
+  x.fillStyle = '#E8432B'; x.fillRect(pad, fy - ls * .38, ls * .9, ls * .14);
+  x.fillStyle = '#262624'; x.font = `400 ${ls}px ${DS}`; x.fillText(SHARE_NAME, pad + ls * 1.3, fy);
   return new Promise(r => cv.toBlob(r, 'image/png'));
 }
 function loadScript(src) { return new Promise((res, rej) => { if ([...document.scripts].some(s => s.src === src)) return res(); const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('โหลดตัวสร้าง PDF ไม่ได้ ตรวจสอบอินเทอร์เน็ต')); document.head.appendChild(s); }); }
@@ -1472,7 +1473,7 @@ async function makePDF(L, title) {
   for (let pg = 0; pg < pagesN; pg++) {
     const W = 1240, H = 1754, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'), m = 96;
     x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
-    drawLogo(x, m, m - 4, 40, '#E8432B'); x.fillStyle = '#262624'; x.font = `300 30px ${DS}`; x.fillText('samecor. Picker', m + 52, m + 26);
+    x.fillStyle = '#262624'; x.font = `400 30px ${DS}`; x.fillText(SHARE_NAME, m, m + 26);
     x.fillStyle = '#86837B'; x.font = `400 20px ${TH}`; x.textAlign = 'right'; x.fillText(`Color spec · ${new Date().toLocaleDateString('th-TH', { dateStyle: 'medium' })} · หน้า ${pg + 1}/${pagesN}`, W - m, m + 24); x.textAlign = 'left';
     x.fillStyle = '#262624'; x.font = `600 46px ${TH}`; x.fillText(title, m, m + 112, W - m * 2);
     x.fillStyle = '#E8432B'; x.fillRect(m, m + 138, 70, 5);

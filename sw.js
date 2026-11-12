@@ -1,4 +1,4 @@
-const CACHE = 'picker-v2';
+const CACHE = 'picker-v3';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', e => {
