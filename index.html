@@ -3,769 +3,1502 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0f0f12">
+<meta name="theme-color" content="#F2F1ED">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Picker">
+<meta name="description" content="Picker — จิ้มของจริง ได้สีจริง วัดสีด้วยกล้องมือถือ + แอปเก็บสี ส่งค่าสีไปใช้งานต่อได้ทันที">
 <title>Picker</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&family=Lexend:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+/* Layout: phone-first single column (max 520px), tab views + slide-in pages + bottom sheets */
 :root{
-  --bg:#0f0f12;--panel:#18181d;--panel2:#212128;--line:#2c2c35;--text:#f3f3f6;--muted:#9b9bab;
-  --accent:#ff5a36;--accent2:#ffc233;--ok:#2ec4a6;--danger:#ff4d6d;
-  --r:18px;--safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px);
+  --bg:#F2F1ED; --surface:#FFFFFF; --ink:#262624; --ink2:#47463F; --muted:#86837B;
+  --line:#E7E5DF; --line2:#D7D4CC; --accent:#E8432B; --dark:#2A2A28; --ok:#2E8B5E; --warn:#D23B22;
+  --f-th:"Anuphan","Noto Sans Thai","Sukhumvit Set",system-ui,sans-serif;
+  --f-disp:"Lexend","Anuphan",system-ui,sans-serif;
+  --gl:max(16px,env(safe-area-inset-left,0px)); --gr:max(16px,env(safe-area-inset-right,0px));
+  --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:"IBM Plex Sans Thai",system-ui,sans-serif;font-size:15px}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-th);font-size:15px;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+body.lock{overflow:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
-button{cursor:pointer;border:0;background:none}
-.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
-.app{max-width:560px;margin:0 auto;min-height:100%;padding:calc(var(--safe-t) + 8px) 16px calc(90px + var(--safe-b))}
-header.top{display:flex;align-items:center;gap:10px;padding:6px 0 12px}
-header.top img{width:34px;height:34px;border-radius:10px}
-header.top h1{font-size:20px;margin:0;letter-spacing:.3px}
-header.top small{display:block;color:var(--muted);font-size:12px;font-weight:400}
-.step{font-family:"JetBrains Mono",monospace;color:var(--accent);font-size:12px;letter-spacing:1px}
-h2{font-size:22px;margin:2px 0 12px}
-section.view{display:none}section.view.on{display:block}
+button{cursor:pointer;border:0;background:none;padding:0;text-align:inherit}
+button:focus-visible,label:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.i{display:block;flex:none}
+.disp{font-family:var(--f-disp)}
+.row{display:flex;align-items:center;gap:10px}
+.sb{justify-content:space-between}
+.grow{flex:1;min-width:0}
+.sub{color:var(--muted);font-size:13.5px;line-height:1.5}
+.tiny{font-size:12px}
+.mt{margin-top:16px}.mt8{margin-top:8px}
+
+/* app shell */
+.app{max-width:520px;margin:0 auto;padding:calc(var(--st) + 6px) var(--gr) calc(92px + var(--sb)) var(--gl)}
+.view{display:none}.view.on{display:block}
+.brandbar{display:flex;align-items:center;justify-content:space-between;min-height:50px;gap:10px}
+.logo{display:flex;align-items:center;gap:7px;font-family:var(--f-disp);font-weight:300;font-size:20px;letter-spacing:-.3px;white-space:nowrap}
+.logo svg{width:24px;height:24px;color:var(--ink)}
+.logo em{font-style:normal;font-family:var(--f-th);font-size:13px;color:var(--muted);padding-left:9px;margin-left:2px;border-left:1px solid var(--line2)}
+.title{font-weight:300;font-size:30px;line-height:1.15;margin:10px 0 4px;letter-spacing:-.3px;text-wrap:balance}
+.title b{font-weight:700}
+.rule{width:40px;height:3px;background:var(--accent);border-radius:2px;margin:12px 0 18px}
 
 /* tab bar */
-nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(15,15,18,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:6px 6px calc(6px + var(--safe-b))}
-nav.tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
-nav.tabs button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;color:var(--muted);font-size:11px}
-nav.tabs button svg{width:24px;height:24px}
-nav.tabs button.on{color:var(--text)}
-nav.tabs button.on svg{color:var(--accent)}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:6px var(--gr) calc(6px + var(--sb)) var(--gl)}
+.tabbar .in{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font-size:12px;color:var(--ink2)}
+.tabbar button.on{color:var(--accent)}
 
-/* generic */
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px}
-.row{display:flex;gap:8px;align-items:center}
-.wrap{flex-wrap:wrap}
-.grow{flex:1}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 16px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);font-weight:500;white-space:nowrap}
-.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn.sm{padding:7px 11px;font-size:13px;border-radius:11px}
-.btn.on{border-color:var(--accent2);color:var(--accent2)}
-.btn.danger{color:var(--danger)}
-.btn:disabled{opacity:.4}
-.muted{color:var(--muted)}
-.tiny{font-size:12px}
-input.f,select.f,textarea.f{width:100%;padding:11px 12px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);outline:none}
-input.f:focus,select.f:focus,textarea.f:focus{border-color:var(--accent)}
-label.l{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
-.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+/* controls */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid #3B3A35;background:var(--surface);font-size:14.5px;white-space:nowrap}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.dark{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn.soft{border-color:var(--line2)}
+.btn.big{min-height:56px;border-radius:14px;font-size:16px}
+.btn:disabled{opacity:.4;pointer-events:none}
+.ibtn{width:48px;height:48px;flex:none;border-radius:14px;border:1px solid var(--line2);background:var(--surface);display:grid;place-items:center;color:var(--ink)}
+.ibtn.big{width:56px;height:56px}
+.ibtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.nb{width:44px;height:44px;display:grid;place-items:center;color:var(--ink);border-radius:12px}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line2);border-radius:12px;padding:3px;gap:2px}
+.seg button{padding:7px 12px;border-radius:9px;font-size:13px;color:var(--ink2);white-space:nowrap}
+.seg button.on{background:var(--ink);color:#fff}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0 4px;margin:0 calc(-1*var(--gr)) 0 calc(-1*var(--gl));padding-left:var(--gl);padding-right:var(--gr)}
 .chips::-webkit-scrollbar{display:none}
-.chip{padding:7px 13px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);font-size:13px;white-space:nowrap}
-.chip.on{background:var(--text);color:var(--bg);border-color:var(--text)}
-.empty{text-align:center;color:var(--muted);padding:34px 10px}
+.chip{flex:none;height:40px;padding:0 17px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);font-size:14px;white-space:nowrap}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.f{width:100%;min-height:48px;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line2);outline:none;font-size:16px}
+.f:focus{border-color:var(--ink)}
+textarea.f{min-height:96px;resize:vertical;line-height:1.5}
+.search{position:relative}.search .i{position:absolute;left:14px;top:14px;color:var(--muted)}.search .f{padding-left:42px}
+.card{background:var(--surface);border-radius:20px;padding:16px}
+.card.flush{padding:0;overflow:hidden}
+.shead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.shead h3{margin:0;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}
+.more{display:inline-flex;align-items:center;gap:2px;font-size:13px;color:var(--muted);padding:6px 0}
+.infob{width:22px;height:22px;border-radius:50%;border:1px solid var(--line2);display:inline-grid;place-items:center;font-size:11px;color:var(--muted);font-family:var(--f-disp)}
+.strip{display:flex;height:44px;border-radius:10px;overflow:hidden}
+.strip>*{flex:1;min-width:0}
+.empty{text-align:center;color:var(--muted);padding:40px 16px;line-height:1.6}
+.badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-th);font-size:11.5px;font-weight:400;padding:2px 9px;border-radius:999px;border:1px solid currentColor;line-height:1.5;letter-spacing:0}
+.ok{color:var(--ok)}.warn{color:var(--warn)}
 
 /* measure */
-.cam{position:relative;border-radius:22px;overflow:hidden;background:#000;aspect-ratio:3/4;height:46vh;max-height:520px;width:100%;touch-action:none}
+.cam{position:relative;height:min(48vh,440px);min-height:300px;border-radius:26px;overflow:hidden;background:#1E1E1C;touch-action:none;user-select:none}
 .cam video{width:100%;height:100%;object-fit:cover;display:block}
-.reticle{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;left:50%;top:50%;pointer-events:none}
-.reticle i{position:absolute;inset:0;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.5),inset 0 0 0 1px rgba(0,0,0,.5)}
-.reticle b{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:2px solid #fff;outline:1px solid rgba(0,0,0,.6)}
-.cam .ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:20px;background:radial-gradient(circle at 50% 40%,#25252d,#0b0b0e)}
-.cam .tools{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:8px}
-.cam .tools button{width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);display:grid;place-items:center;color:#fff}
-.cam .tools button.on{background:var(--accent2);color:#000}
-.cam .badge{position:absolute;left:10px;top:10px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.55);font-size:12px}
-.readout{display:flex;gap:14px;align-items:stretch;margin-top:12px}
-.bigsw{width:96px;min-height:96px;border-radius:18px;border:1px solid rgba(255,255,255,.12);flex:none;transition:background .12s}
-.vals{flex:1;min-width:0}
-.vals .hex{font-size:26px;font-family:"JetBrains Mono",monospace;line-height:1.1}
-.vals .nm{color:var(--muted);font-size:13px;margin:2px 0 6px}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12.5px}
-.kv span:nth-child(odd){color:var(--muted)}
-.kv span:nth-child(even){font-family:"JetBrains Mono",monospace}
-.seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:3px}
-.seg button{padding:6px 10px;border-radius:9px;font-size:12.5px;color:var(--muted)}
-.seg button.on{background:var(--text);color:var(--bg)}
-.shoot{width:100%;margin-top:12px;padding:15px;font-size:17px}
+.ret{position:absolute;left:50%;top:50%;width:84px;height:84px;transform:translate(-50%,-50%);pointer-events:none;transition:left .12s,top .12s}
+.ret span{position:absolute;width:20px;height:20px;border:3px solid #fff;filter:drop-shadow(0 0 1.5px rgba(0,0,0,.6))}
+.ret span:nth-child(1){left:0;top:0;border-right:0;border-bottom:0;border-top-left-radius:6px}
+.ret span:nth-child(2){right:0;top:0;border-left:0;border-bottom:0;border-top-right-radius:6px}
+.ret span:nth-child(3){left:0;bottom:0;border-right:0;border-top:0;border-bottom-left-radius:6px}
+.ret span:nth-child(4){right:0;bottom:0;border-left:0;border-top:0;border-bottom-right-radius:6px}
+.ret i{position:absolute;left:50%;top:50%;width:10px;height:10px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid var(--accent);box-shadow:0 0 0 1px rgba(255,255,255,.8)}
+.cam .side{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:8px}
+.gbtn{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:grid;place-items:center;color:var(--ink)}
+.gbtn.on{background:var(--accent);color:#fff}
+.cam .bl{position:absolute;left:12px;bottom:12px}
+.cam .seg{background:rgba(255,255,255,.88);border:0;backdrop-filter:blur(8px)}
+.cam .tag{position:absolute;left:12px;top:12px;font-size:12px;padding:5px 10px;border-radius:999px;background:var(--accent);color:#fff}
+.camov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;background:#E8E6E0;color:var(--ink)}
+.camov .art{width:84px;height:84px;color:var(--accent)}
+.live{margin-top:12px;border-radius:24px;padding:18px 20px;min-height:128px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;transition:background-color .15s,color .15s;background:#D9D6CE;color:var(--ink)}
+.live .lab{font-family:var(--f-disp);font-size:11.5px;letter-spacing:2px;text-transform:uppercase;opacity:.75;display:flex;justify-content:space-between;gap:8px}
+.live .hx{font-family:var(--f-disp);font-weight:300;font-size:40px;letter-spacing:-1px;line-height:1}
+.live .meta{font-size:13px;opacity:.85;margin-top:6px;font-variant-numeric:tabular-nums}
+.live.flash{animation:flash .45s ease}
+@keyframes flash{0%{transform:scale(1)}40%{transform:scale(.97)}100%{transform:scale(1)}}
+.actrow{display:flex;gap:10px;margin-top:12px}
+.actrow .btn.pri{flex:1}
 
 /* library */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
-.sw{border-radius:16px;overflow:hidden;background:var(--panel);border:1px solid var(--line);text-align:left}
-.sw .c{height:78px}
-.sw .t{padding:7px 9px 9px}
-.sw .t b{display:block;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sw .t span{font-size:11.5px;color:var(--muted);font-family:"JetBrains Mono",monospace}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pcard{background:var(--surface);border-radius:20px;overflow:hidden;text-align:left;display:flex;flex-direction:column}
+.pcard .art{height:104px;background-size:cover;background-position:center}
+.pcard .bd{padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px}
+.pcard b{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard .strip{height:16px;border-radius:5px}
+.cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tile{background:var(--surface);border-radius:16px;overflow:hidden;text-align:left;position:relative}
+.tile .sw{aspect-ratio:1.2}
+.tile .t{padding:8px 10px 10px}
+.tile b{display:block;font-family:var(--f-disp);font-weight:400;font-size:13.5px}
+.tile span{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .pin{position:absolute;right:7px;top:7px;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.9);display:grid;place-items:center;color:var(--accent)}
+
+/* pages */
+.page{position:fixed;inset:0;z-index:30;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateX(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.page.on{transform:none}
+.page .in{max-width:520px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding:calc(var(--st) + 4px) var(--gr) 0 var(--gl)}
+.ptop{display:flex;align-items:center;justify-content:space-between;min-height:52px;margin:0 -10px}
+.ptop .r{display:flex}
+.ptitle{font-size:28px;font-weight:700;margin:6px 0 2px;letter-spacing:-.2px}
+.ptitle+.sub{font-family:var(--f-disp);font-weight:300;font-size:15px;margin-bottom:14px}
+.pfoot{position:sticky;bottom:0;margin-top:auto;display:flex;gap:10px;padding:16px 0 calc(14px + var(--sb));background:linear-gradient(rgba(242,241,237,0),var(--bg) 26%)}
+.pfoot .btn.pri{flex:1;min-height:56px;border-radius:14px;font-size:16px}
+.pbody{display:flex;flex-direction:column;gap:14px;padding-bottom:10px}
+
+/* color page */
+.hero{border-radius:24px;padding:20px 22px 22px;min-height:236px;display:flex;flex-direction:column;justify-content:space-between}
+.hero .no{font-family:var(--f-disp);font-size:12.5px;letter-spacing:2.5px;text-transform:uppercase;opacity:.72}
+.hero .hx{font-family:var(--f-disp);font-weight:300;font-size:50px;letter-spacing:-1.5px;line-height:1}
+.hero .nm{font-family:var(--f-disp);font-weight:300;font-size:17px;margin-top:8px;display:inline-flex;align-items:center;gap:6px;color:inherit}
+.cap{font-size:13px;color:var(--muted);margin:-4px 2px 0}
+.vrow{position:relative;display:grid;grid-template-columns:76px 1fr 44px;align-items:center;min-height:58px;padding:0 6px 0 18px;border-bottom:1px solid var(--line)}
+.vrow.key::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.vrow .k{font-size:14px;color:var(--muted);line-height:1.2}
+.vrow.key .k{color:var(--ink);font-weight:600}
+.vrow .k small{display:block;font-size:10.5px}
+.vrow .v{font-family:var(--f-disp);font-size:17px;font-weight:300;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cpy{width:44px;height:44px;display:grid;place-items:center;color:var(--ink2)}
+.vfoot{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 12px 18px}
+.tools5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.tool{min-height:70px;border-radius:14px;background:var(--surface);border:1px solid var(--line2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:12.5px;padding:6px 2px}
+.tool.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.mt3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mt3 button{text-align:left;display:flex;flex-direction:column;gap:3px;min-width:0}
+.mt3 .sw{height:66px;border-radius:12px;margin-bottom:8px;border:1px solid rgba(0,0,0,.05)}
+.mt3 b{font-family:var(--f-disp);font-weight:500;font-size:14px}
+.mt3 span{font-size:12.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt3 small{font-size:11.5px;color:var(--muted);line-height:1.35}
+.hrow{display:flex;flex-direction:column;gap:7px;padding:10px 0;border-bottom:1px solid var(--line)}
+.hrow:last-child{border-bottom:0}
+.hrow .strip{height:46px}
+.hrow .strip button{border-right:1px solid rgba(255,255,255,.15)}
+.pv{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pv>div{border-radius:14px;padding:14px;min-height:100px;display:flex;flex-direction:column;justify-content:space-between}
+.pv .aa{font-size:26px;font-weight:600}
+.pills{display:flex;gap:5px;flex-wrap:wrap}
+.pill{font-size:11px;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.9);color:var(--ink)}
+.pill.x{text-decoration:line-through;opacity:.55}
+.coderow{display:grid;grid-template-columns:84px 1fr 44px;align-items:center;min-height:48px;border-bottom:1px solid var(--line);font-size:13px}
+.coderow:last-child{border-bottom:0}
+.coderow code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12.5px;white-space:nowrap;overflow-x:auto;scrollbar-width:none}
+.coderow span{color:var(--muted)}
+.inkbars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.inkbars div{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+.inkbars .bar{height:70px;border-radius:10px;background:var(--bg);position:relative;overflow:hidden}
+.inkbars .bar i{position:absolute;left:0;right:0;bottom:0}
+.inkbars b{font-family:var(--f-disp);font-weight:400;font-size:18px;color:var(--ink)}
+.scale{display:grid;grid-template-columns:repeat(11,1fr);border-radius:12px;overflow:hidden}
+.scale button{height:58px;font-size:9.5px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px;font-family:var(--f-disp)}
+.scale button.base{box-shadow:inset 0 0 0 2px currentColor}
+.full{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;padding:calc(30px + var(--sb)) 28px;font-family:var(--f-disp);font-weight:300;font-size:44px}
+
+/* palette page */
+.phero{position:relative;border-radius:24px;min-height:236px;padding:22px;display:flex;flex-direction:column;justify-content:flex-end;color:#fff;background-size:cover;background-position:center;overflow:hidden}
+.phero::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 20%,rgba(0,0,0,.38))}
+.phero>*{position:relative}
+.phero h2{font-family:var(--f-disp);font-weight:300;font-size:30px;margin:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;letter-spacing:-.3px;line-height:1.15}
+.phero .sub{color:rgba(255,255,255,.85);margin-top:4px}
+.phero .strip{height:52px;border:3px solid rgba(255,255,255,.92);border-radius:14px;margin-top:16px}
+.desc{line-height:1.65;color:var(--ink2);margin:2px 2px 0}
+.crow{display:grid;grid-template-columns:58px 1fr 44px;gap:14px;align-items:center;padding:10px 6px 10px 14px;border-bottom:1px solid var(--line);text-align:left;width:100%}
+.crow:last-child{border-bottom:0}
+.crow .sw{width:58px;height:58px;border-radius:11px;border:1px solid rgba(0,0,0,.05)}
+.crow b{display:block;font-family:var(--f-disp);font-weight:400;font-size:17px}
+.crow span{font-size:13px;color:var(--muted)}
+.crow .pct{font-family:var(--f-disp);font-size:15px;color:var(--muted);font-weight:300}
+.crow.img{grid-template-columns:52px 1fr 52px 40px 40px}
+.crow.img .sw{width:52px;height:44px}
+.chk{display:flex;gap:16px;flex-wrap:wrap;font-size:13.5px;margin-bottom:12px}
+.chk>span{display:inline-flex;gap:5px;align-items:center}
+.cvd{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.cvd label{font-size:13px;font-weight:600}
+.cvd .strip{border-radius:9px;height:38px}
 
 /* image */
-.imgbox{position:relative;border-radius:20px;overflow:hidden;background:var(--panel);border:1px dashed var(--line);min-height:220px;display:grid;place-items:center}
-.imgbox canvas{width:100%;height:auto;display:block;touch-action:none}
-.imgbox .dot{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.6),0 4px 14px rgba(0,0,0,.4);pointer-events:none;display:none}
-.strip{display:flex;height:64px;border-radius:14px;overflow:hidden}
-.strip>*{flex:1}
-.pal{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
-.pal button{aspect-ratio:1;border-radius:12px;border:1px solid rgba(255,255,255,.1);position:relative}
-.pal button span{position:absolute;bottom:3px;left:0;right:0;font-size:9px;text-align:center;font-family:"JetBrains Mono",monospace}
+.drop{border:1.5px dashed var(--line2);border-radius:24px;background:var(--surface);padding:28px 18px;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center}
+.drop.over{border-color:var(--accent);background:#FFF6F3}
+.drop .row{width:100%}
+.drop .btn{flex:1}
+.imgwrap{position:relative;border-radius:22px;overflow:hidden;background:#ddd;touch-action:none;user-select:none;line-height:0}
+.imgwrap canvas{width:100%;height:auto;display:block}
+.frame{position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.32);pointer-events:none}
+.frame i{position:absolute;right:-6px;top:-6px;width:12px;height:12px;background:var(--accent)}
+.pickdot{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.3);pointer-events:none}
+.hint{font-size:12.5px;color:var(--muted);margin:8px 2px 14px}
+.bigstrip{display:flex;gap:8px}
+.bigstrip button{flex:1;height:76px;border-radius:12px;border:1px solid rgba(0,0,0,.05)}
+.tips{display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--ink2);line-height:1.5}
+.tips div{display:grid;grid-template-columns:28px 1fr;gap:8px}
+.tips b{font-family:var(--f-disp);color:var(--accent);font-weight:400}
 
 /* community */
-.feed{display:flex;flex-direction:column;gap:12px}
-.post .strip{height:84px}
-.post .meta{display:flex;align-items:center;gap:8px;margin-top:10px}
-.post .meta b{font-weight:600}
-.like.on{color:var(--danger);border-color:var(--danger)}
+.chead{background:var(--dark);color:#fff;margin:calc(-1*(var(--st) + 6px)) calc(-1*var(--gr)) 0 calc(-1*var(--gl));padding:calc(var(--st) + 22px) var(--gr) 26px var(--gl);border-radius:0 0 28px 28px}
+.chead h1{font-family:var(--f-disp);font-weight:300;font-size:38px;margin:0;letter-spacing:-.5px;line-height:1.1}
+.chead p{margin:4px 0 0;font-size:19px;font-weight:600}
+.chead .nb{color:#fff}
+.masonry{columns:2;column-gap:10px}
+.post{break-inside:avoid;margin-bottom:10px;background:var(--surface);border-radius:18px;overflow:hidden;display:block;width:100%;text-align:left}
+.post .top{padding:13px 12px 11px;display:flex;align-items:center;justify-content:space-between;gap:6px;font-family:var(--f-disp);font-size:15px}
+.src{font-family:var(--f-th);font-size:10.5px;padding:3px 8px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;background:var(--dark);color:#fff}
+.src.dev::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.src.img{background:rgba(255,255,255,.85);color:var(--ink);border:1px solid var(--ink)}
+.post .art{background-size:cover;background-position:center}
+.post .bd{padding:11px 12px 6px}
+.post .bd b{display:block;font-size:14.5px;font-weight:600;line-height:1.3}
+.post .who{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-top:5px;min-width:0}
+.post .who span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.av{width:18px;height:18px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:9px;color:#fff;font-weight:600}
+.post .acts{display:flex;align-items:center;gap:2px;padding:0 4px 8px}
+.post .acts button{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--ink2);padding:8px}
+.post .acts button.on{color:var(--accent)}
 
-/* export */
-.fmts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.fmts button{padding:12px 6px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);text-align:center;font-size:13px}
-.fmts button b{display:block;font-size:15px}
-.fmts button small{color:var(--muted);font-size:11px}
-.fmts button.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-textarea.code{font-family:"JetBrains Mono",monospace;font-size:12px;min-height:180px;resize:vertical;white-space:pre}
-
-/* sheet */
-.scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;display:none}
-.scrim.on{display:block}
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;max-width:560px;margin:0 auto;background:var(--panel);border-radius:24px 24px 0 0;border:1px solid var(--line);padding:10px 16px calc(18px + var(--safe-b));max-height:88vh;overflow:auto;transform:translateY(105%);transition:transform .25s ease}
+/* sheet & export */
+.scrim{position:fixed;inset:0;background:rgba(30,30,28,.45);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;max-width:560px;margin:0 auto;background:var(--surface);border-radius:26px 26px 0 0;padding:10px var(--gr) calc(20px + var(--sb)) var(--gl);max-height:90vh;overflow-y:auto;transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
 .sheet.on{transform:none}
-.sheet .grab{width:42px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 12px}
-.copyrow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}
-.copyrow span:first-child{color:var(--muted);font-size:13px}
-.copyrow button{font-family:"JetBrains Mono",monospace;font-size:13px;padding:4px 8px;border-radius:8px;background:var(--panel2)}
-.toast{position:fixed;left:50%;bottom:calc(96px + var(--safe-b));transform:translateX(-50%) translateY(20px);opacity:0;background:var(--text);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;z-index:60;transition:.2s;pointer-events:none;max-width:90vw;text-align:center}
-.toast.on{opacity:1;transform:translateX(-50%)}
+.grab{width:40px;height:5px;border-radius:9px;background:var(--line2);margin:0 auto 14px}
+.st{font-size:18px;font-weight:600;margin:0 0 6px}
+.xsec{padding:14px 0 16px;border-bottom:1px solid var(--line)}
+.xsec:last-child{border-bottom:0}
+.xsec h4{margin:0 0 4px;font-size:15.5px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.xsec .sub{margin-bottom:10px}
+.xbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.xb{min-height:44px;padding:0 14px;border:1px solid #3B3A35;border-radius:10px;background:#fff;display:inline-flex;gap:8px;align-items:center;font-size:14px;white-space:nowrap}
+.xb small{color:var(--muted);font-size:12.5px}
+.apps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
+.appt{background:var(--bg);border-radius:12px;padding:10px 2px 9px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;color:var(--ink2);min-width:0}
+.appt .lg{width:32px;height:32px;border-radius:9px;background:#fff;border:1px solid var(--line2);display:grid;place-items:center;font-size:11.5px;font-weight:500;font-family:var(--f-disp);color:var(--ink)}
+.sheetsw{height:120px;border-radius:18px;display:flex;align-items:flex-end;padding:14px 16px;font-family:var(--f-disp);font-size:26px;font-weight:300}
+.list{display:flex;flex-direction:column}
+.list button{display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;width:100%}
+.list button .strip{width:64px;height:28px;border-radius:7px;flex:none}
+.list button.cur{font-weight:600}
+.list .danger{color:var(--warn)}
+.toast{position:fixed;left:50%;bottom:calc(100px + var(--sb));transform:translate(-50%,20px);opacity:0;background:var(--ink);color:#fff;padding:11px 12px 11px 18px;border-radius:14px;font-size:14px;z-index:70;transition:.22s;pointer-events:none;display:flex;align-items:center;gap:14px;max-width:min(92vw,480px)}
+.toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button{color:#FF8A73;font-weight:600;padding:4px 6px}
+.toast:not(.has) {padding-right:18px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (min-width:600px){.cgrid{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
 <body>
 <div class="app">
-  <header class="top">
-    <img src="icon.svg" alt="">
-    <h1>Picker <small>จิ้มของจริง ได้สีจริง</small></h1>
-  </header>
 
-  <!-- 01 MEASURE -->
+  <!-- ===== วัดสี ===== -->
   <section class="view on" id="v-measure">
-    <div class="step">01</div>
-    <h2>วัดสีจากวัสดุจริง</h2>
-    <div class="cam" id="cam">
+    <div class="brandbar">
+      <div class="logo" data-logo></div>
+    </div>
+    <div id="camBox" class="cam">
       <video id="video" playsinline muted autoplay></video>
-      <div class="reticle" id="reticle"><i></i><b id="retBox"></b></div>
-      <div class="badge" id="calBadge" hidden>คาลิเบรตแล้ว</div>
-      <div class="tools">
-        <button id="btnTorch" hidden title="ไฟฉาย"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 2h10l-2 7h-6zM9 9h6v13H9z"/></svg></button>
-        <button id="btnCal" title="คาลิเบรตด้วยกระดาษขาว"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg></button>
-        <button id="btnFlip" title="สลับกล้อง"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h11l-3-3M20 17H9l3 3"/></svg></button>
+      <div class="ret" id="ret"><span></span><span></span><span></span><span></span><i id="retDot"></i></div>
+      <div class="tag" id="calTag" hidden>คาลิเบรตแล้ว</div>
+      <div class="side">
+        <button class="gbtn" id="btnTorch" data-act="torch" hidden aria-label="ไฟฉาย"></button>
+        <button class="gbtn" id="btnCal" data-act="calib" aria-label="คาลิเบรตแสงขาว"></button>
+        <button class="gbtn" data-act="flip" aria-label="สลับกล้อง"></button>
       </div>
-      <div class="ov" id="camOv">
-        <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#ff5a36" stroke-width="1.6"><path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="4"/></svg>
-        <div><b>เล็งวงกลมไปที่วัสดุจริง</b><div class="muted tiny" id="camMsg">ผ้า ไม้ สี กระเบื้อง กระดาษ — แตะจอเพื่อเลือกจุดวัด</div></div>
-        <button class="btn pri" id="btnStart">เปิดกล้อง</button>
-        <label class="btn sm">หรือถ่ายภาพ<input type="file" accept="image/*" capture="environment" hidden id="fileCapture"></label>
-      </div>
-    </div>
-    <div class="row" style="margin-top:10px;justify-content:space-between">
-      <div class="seg" id="segSize">
-        <button data-r="1">จุด</button><button data-r="5" class="on">เล็ก</button><button data-r="12">กลาง</button><button data-r="24">ใหญ่</button>
-      </div>
-      <button class="btn sm" id="btnFreeze">หยุดภาพ</button>
-    </div>
-    <div class="readout">
-      <div class="bigsw" id="liveSw" style="background:#333"></div>
-      <div class="vals">
-        <div class="hex" id="liveHex">#——————</div>
-        <div class="nm" id="liveName">ยังไม่ได้วัด</div>
-        <div class="kv" id="liveKv"></div>
+      <div class="bl"><div class="seg" id="sizeSeg"><button data-act="size" data-r="1">จุด</button><button data-act="size" data-r="5" class="on">เล็ก</button><button data-act="size" data-r="12">กลาง</button><button data-act="size" data-r="24">ใหญ่</button></div></div>
+      <div class="camov" id="camOv">
+        <div class="art" data-logo-art></div>
+        <div><b style="font-size:17px">เล็งกรอบไปที่วัสดุจริง</b><div class="sub" id="camMsg">ผ้า ไม้ สีทาผนัง กระเบื้อง กระดาษ · แตะจอเพื่อเลือกจุดวัด</div></div>
+        <button class="btn pri" data-act="start" style="min-width:160px">เปิดกล้อง</button>
+        <label class="btn soft" tabindex="0">หรือถ่ายภาพ<input type="file" accept="image/*" capture="environment" hidden id="fileCapture"></label>
       </div>
     </div>
-    <button class="btn pri shoot" id="btnPick">● จิ้มสีนี้</button>
+    <div class="live" id="live">
+      <div class="lab"><span id="liveLab">COLOR · LIVE</span><span id="liveSrc"></span></div>
+      <div><div class="hx" id="liveHex">— — —</div><div class="meta" id="liveMeta">เปิดกล้องเพื่อเริ่มวัดสี</div></div>
+    </div>
+    <div class="actrow">
+      <button class="ibtn big" data-act="freeze" id="btnFreeze" aria-label="หยุดภาพ"></button>
+      <button class="btn pri big" data-act="pick" id="btnPick">จิ้มสีนี้ · เก็บเข้าคลัง</button>
+    </div>
   </section>
 
-  <!-- 02 LIBRARY -->
+  <!-- ===== คลังสี ===== -->
   <section class="view" id="v-library">
-    <div class="step">02</div>
-    <h2>คลังสี & กลุ่มสี</h2>
-    <input class="f" id="libSearch" placeholder="ค้นหาชื่อหรือ HEX…">
-    <div class="chips" id="groupChips" style="margin-top:10px"></div>
-    <div class="row wrap" id="groupActions" style="margin:8px 0 4px"></div>
-    <div class="grid" id="libGrid" style="margin-top:10px"></div>
+    <div class="brandbar"><div class="logo" data-logo></div><button class="nb" data-act="add" aria-label="เพิ่ม" id="libAdd"></button></div>
+    <h1 class="title">คลังสี <b>&amp; กลุ่มสี</b></h1>
+    <div class="sub">HEX · RGB · Lab จัดกลุ่มตามโปรเจกต์</div>
+    <div class="rule"></div>
+    <div class="chips" id="libSeg"></div>
+    <div class="search mt8" id="libSearchBox"><span data-ic="search"></span><input class="f" id="libSearch" placeholder="ค้นหาชื่อสีหรือ HEX" autocomplete="off"></div>
+    <div id="libBody" class="mt"></div>
   </section>
 
-  <!-- 03 IMAGE -->
+  <!-- ===== จากภาพ ===== -->
   <section class="view" id="v-image">
-    <div class="step">03</div>
-    <h2>ดึงสีจากภาพ</h2>
-    <div class="row" style="margin-bottom:10px">
-      <label class="btn grow">📷 ถ่ายภาพ<input type="file" accept="image/*" capture="environment" hidden id="imgCam"></label>
-      <label class="btn grow">🖼 เลือกรูป<input type="file" accept="image/*" hidden id="imgFile"></label>
-    </div>
-    <div class="imgbox" id="imgBox">
-      <div class="empty" id="imgEmpty">เลือกรูปเพื่อดึงชุดสีอัตโนมัติ<br><span class="tiny">แล้วแตะบนรูปเพื่อจิ้มสีเฉพาะจุด</span></div>
-      <canvas id="imgCanvas" hidden></canvas>
-      <div class="dot" id="imgDot"></div>
-    </div>
-    <div id="imgResult" hidden>
-      <div class="row" style="justify-content:space-between;margin:14px 0 8px">
-        <b>ชุดสีเด่นในภาพ</b>
-        <div class="seg" id="segK"><button data-k="4">4</button><button data-k="6" class="on">6</button><button data-k="8">8</button></div>
+    <div class="brandbar"><div class="logo" data-logo></div></div>
+    <h1 class="title">ดึงสีจากภาพ<br><b>ได้ชุดสีทันที</b></h1>
+    <div class="rule"></div>
+    <div class="drop" id="drop">
+      <div class="sub">ถ่ายภาพ เลือกรูป หรือลากไฟล์มาวาง<br>แอปจะหาสีเด่นและสัดส่วนให้อัตโนมัติ</div>
+      <div class="row">
+        <label class="btn pri" tabindex="0"><span data-ic="camera"></span>ถ่ายภาพ<input type="file" accept="image/*" capture="environment" hidden id="imgCam"></label>
+        <label class="btn" tabindex="0"><span data-ic="image"></span>เลือกรูป<input type="file" accept="image/*" hidden id="imgFile"></label>
       </div>
-      <div class="pal" id="imgPal"></div>
-      <button class="btn pri" id="btnSavePal" style="width:100%;margin-top:12px">บันทึกทั้งชุดเป็นกลุ่มใหม่</button>
-      <div class="card row" id="imgPicked" style="margin-top:12px" hidden>
-        <div class="bigsw" id="imgPickSw" style="width:56px;min-height:56px;border-radius:14px"></div>
-        <div class="grow"><div class="mono" id="imgPickHex"></div><div class="muted tiny" id="imgPickName"></div></div>
-        <button class="btn sm pri" id="btnImgPickSave">บันทึก</button>
+    </div>
+    <div id="imgRecent"></div>
+    <div class="card mt">
+      <div class="shead"><h3>ให้สีจากภาพแม่นขึ้น</h3></div>
+      <div class="tips">
+        <div><b>01</b><span>ถ่ายใต้แสงธรรมชาติหรือแสงขาว หลีกเลี่ยงไฟสีเหลือง</span></div>
+        <div><b>02</b><span>ลากกรอบเฉพาะพื้นที่วัสดุ ตัดเงาและพื้นหลังออก</span></div>
+        <div><b>03</b><span>งานที่ต้องการค่าแม่นยำ ใช้โหมดวัดสีด้วยกล้องพร้อมคาลิเบรตแสงขาว</span></div>
       </div>
     </div>
   </section>
 
-  <!-- 04 COMMUNITY -->
+  <!-- ===== ชุมชน ===== -->
   <section class="view" id="v-community">
-    <div class="step">04</div>
-    <h2>ชุมชนแชร์สี</h2>
-    <div class="card">
-      <b>แชร์ชุดสีของคุณ</b>
-      <div class="muted tiny" style="margin:2px 0 10px">สร้างลิงก์ให้เพื่อนเปิดแล้วนำเข้าชุดสีได้ทันที</div>
-      <div class="row"><select class="f grow" id="shareGroup"></select><button class="btn pri" id="btnShareGroup">แชร์</button></div>
+    <div class="chead">
+      <div class="row sb" style="align-items:flex-start">
+        <div><h1>Community</h1><p>ชุมชนสี</p></div>
+        <div class="row" style="gap:0"><button class="nb" data-act="profile" aria-label="โปรไฟล์" id="meBtn"></button></div>
+      </div>
     </div>
-    <div class="chips" id="feedTabs" style="margin:14px 0 10px">
-      <button class="chip on" data-f="hot">มาแรง</button><button class="chip" data-f="new">ล่าสุด</button><button class="chip" data-f="mine">ของฉัน</button><button class="chip" data-f="liked">ที่ถูกใจ</button>
-    </div>
-    <div class="feed" id="feed"></div>
-  </section>
-
-  <!-- 05 EXPORT -->
-  <section class="view" id="v-export">
-    <div class="step">05</div>
-    <h2>ส่งออกไปงานดีไซน์ & พิมพ์</h2>
-    <label class="l">เลือกสีที่จะส่งออก</label>
-    <select class="f" id="expSrc"></select>
-    <div class="strip" id="expStrip" style="margin:10px 0;height:40px"></div>
-    <label class="l">รูปแบบไฟล์</label>
-    <div class="fmts" id="fmts"></div>
-    <div class="muted tiny" id="fmtNote" style="margin:10px 0 6px"></div>
-    <textarea class="f code" id="expOut" readonly></textarea>
-    <div class="row" style="margin-top:10px">
-      <button class="btn grow" id="btnExpCopy">คัดลอก</button>
-      <button class="btn pri grow" id="btnExpDl">ดาวน์โหลดไฟล์</button>
-    </div>
+    <div class="chips mt" id="feedChips"></div>
+    <div class="masonry mt8" id="feed"></div>
+    <p class="sub tiny" style="text-align:center;margin:14px 8px">ชุดสีตัวอย่าง + ชุดสีที่คุณแชร์ · ส่งต่อให้เพื่อนด้วยลิงก์ เปิดได้ไม่ต้องล็อกอิน</p>
   </section>
 </div>
 
-<nav class="tabs"><div class="in">
-  <button data-tab="measure" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg>วัดสี</button>
-  <button data-tab="library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>คลังสี</button>
-  <button data-tab="image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>จากภาพ</button>
-  <button data-tab="community"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 14.2a5 5 0 0 1 6 4.8"/></svg>ชุมชน</button>
-  <button data-tab="export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M4 14v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/></svg>ส่งออก</button>
+<nav class="tabbar"><div class="in">
+  <button data-tab="measure" class="on"><span data-ic="scan"></span>วัดสี</button>
+  <button data-tab="library"><span data-ic="box"></span>คลังสี</button>
+  <button data-tab="image"><span data-ic="image"></span>จากภาพ</button>
+  <button data-tab="community"><span data-ic="users"></span>ชุมชน</button>
 </div></nav>
 
 <div class="scrim" id="scrim"></div>
-<div class="sheet" id="sheet"><div class="grab"></div><div id="sheetBody"></div></div>
-<div class="toast" id="toast"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div>
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="toastBtn" hidden></button></div>
 
 <script>
-/* ============ utils ============ */
-const $ = s => document.querySelector(s);
-const $$ = s => [...document.querySelectorAll(s)];
-const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
+'use strict';
+/* =========================================================
+   Utilities
+   ========================================================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
 const clamp = (v, a = 0, b = 255) => Math.min(b, Math.max(a, v));
-const HEXRE = /^#?[0-9a-f]{6}$/i;
+const r1 = v => { const x = Math.round(v * 10) / 10; return (Object.is(x, -0) ? 0 : x).toFixed(1).replace(/\.0$/, ''); };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function normHex(s) {
+  s = String(s || '').trim().replace(/^#/, '');
+  if (/^[0-9a-f]{3}$/i.test(s)) s = s.split('').map(c => c + c).join('');
+  return /^[0-9a-f]{6}$/i.test(s) ? '#' + s.toUpperCase() : null;
+}
+function ago(t) {
+  const s = (Date.now() - t) / 1000;
+  if (s < 60) return 'เมื่อสักครู่';
+  if (s < 3600) return Math.floor(s / 60) + ' นาทีที่แล้ว';
+  if (s < 86400) return Math.floor(s / 3600) + ' ชั่วโมงที่แล้ว';
+  const d = Math.floor(s / 86400);
+  if (d === 1) return 'เมื่อวาน';
+  if (d < 7) return d + ' วันที่แล้ว';
+  return new Date(t).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+}
+const hash = s => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) | 0; return Math.abs(h); };
 
-function toHex(r, g, b) { return '#' + [r, g, b].map(v => Math.round(clamp(v)).toString(16).padStart(2, '0')).join('').toUpperCase(); }
-function rgbOf(h) { const n = parseInt(h.replace('#', ''), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
-function toHsl(r, g, b) {
-  r /= 255; g /= 255; b /= 255;
-  const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0, s = 0; const l = (mx + mn) / 2;
-  if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn);
-    h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; }
-  return [Math.round(h), Math.round(s * 100), Math.round(l * 100)];
+/* icons */
+const P = {
+  back: '<path d="M15 5l-7 7 7 7"/>',
+  more: '<circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/>',
+  copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="1.5"/><path d="M15.5 8.5V5.5a1 1 0 0 0-1-1h-9a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h3"/>',
+  bookmark: '<path d="M6.5 4h11v16l-5.5-3.8L6.5 20z"/>',
+  bookmarkF: '<path d="M6.5 4h11v16l-5.5-3.8L6.5 20z" fill="currentColor"/>',
+  share: '<path d="M12 15V3.5M7.5 8L12 3.5 16.5 8"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>',
+  expand: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+  chev: '<path d="M6 9l6 6 6-6"/>',
+  match: '<circle cx="9" cy="12" r="5.5"/><circle cx="15" cy="12" r="5.5"/>',
+  harmony: '<circle cx="12" cy="12" r="9"/><path d="M12 12V3M12 12l7.8 4.5M12 12l-7.8 4.5"/>',
+  digital: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  print: '<path d="M7 9V3.5h10V9"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v6.5H7z"/>',
+  brand: '<path d="M3.5 12.5V4.5a1 1 0 0 1 1-1h8l8.5 8.5-9 9z"/><circle cx="8.5" cy="8.5" r="1.5"/>',
+  scan: '<path d="M4 8.5V5a1 1 0 0 1 1-1h3.5M15.5 4H19a1 1 0 0 1 1 1v3.5M20 15.5V19a1 1 0 0 1-1 1h-3.5M8.5 20H5a1 1 0 0 1-1-1v-3.5"/><circle cx="12" cy="12" r="2.6"/>',
+  box: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',
+  image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2a5 5 0 0 1 6 4.8"/>',
+  refresh: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  heart: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.2 4.2 0 0 1 12 7.3a4.2 4.2 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z"/>',
+  heartF: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.2 4.2 0 0 1 12 7.3a4.2 4.2 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z" fill="currentColor"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  download: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  torch: '<path d="M8 2.5h8l-1 6H9z"/><path d="M9 8.5h6V21H9z"/><path d="M12 12.5v2"/>',
+  target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/>',
+  flip: '<path d="M4 7.5h12.5l-3-3M20 16.5H7.5l3 3"/>',
+  bt: '<path d="M7 7l10 10-5 4V3l5 4L7 17"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  pause: '<path d="M9 5v14M15 5v14"/>',
+  play: '<path d="M8 5l11 7-11 7z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+  camera: '<path d="M3 8.5a2 2 0 0 1 2-2h2l2-2.5h6l2 2.5h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.8"/>',
+  warn: '<path d="M12 3.5L21.5 20h-19z" fill="currentColor" stroke="none"/><path d="M12 10v4.5M12 17v.4" stroke="#fff" stroke-width="2"/>',
+  code: '<path d="M8.5 7l-5 5 5 5M15.5 7l5 5-5 5"/>',
+  figma: '<path d="M9 3h3v6H9a3 3 0 0 1 0-6zM12 3h3a3 3 0 0 1 0 6h-3zM9 9h3v6H9a3 3 0 0 1 0-6zM15 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM9 15h3v3a3 3 0 1 1-3-3z"/>',
+  gem: '<path d="M6.5 4h11l4 6-10.5 11L.5 10z" transform="translate(1 0) scale(.92)"/><path d="M1.5 9.2h20" transform="scale(.96)"/>',
+  slides: '<rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M9 21l3-4 3 4"/>',
+  folder: '<path d="M3 6.5a1.5 1.5 0 0 1 1.5-1.5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/>',
+  hash: '<path d="M5 9h15M4 15h15M10 4L8 20M16 4l-2 16"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.6v.4"/>',
+};
+const ic = (n, s = 22, sw = 1.7) => `<svg class="i" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n] || ''}</svg>`;
+const LOGO_PATHS = ['M31 10.5H14.5a5 5 0 0 0-5 5V17', 'M9 29.5h16.5a5 5 0 0 0 5-5V23'];
+const logoMark = (sw = 4.6) => `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="square" aria-hidden="true">${LOGO_PATHS.map(d => `<path d="${d}"/>`).join('')}<path d="M9.5 17v3.5M30.5 23v-3.5" stroke-linecap="butt"/></svg>`;
+$$('[data-logo]').forEach(e => e.innerHTML = `${logoMark()}samecor.<em>Picker</em>`);
+$$('[data-logo-art]').forEach(e => e.innerHTML = logoMark(3.4));
+$$('[data-ic]').forEach(e => e.outerHTML = ic(e.dataset.ic, 22));
+
+/* =========================================================
+   Color science (sRGB · XYZ · Lab D50/D65 · ΔE2000 · CVD)
+   ========================================================= */
+const toHex = (r, g, b) => '#' + [r, g, b].map(v => Math.round(clamp(isNaN(v) ? 0 : v)).toString(16).padStart(2, '0')).join('').toUpperCase();
+const rgbOf = h => { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const s2l = v => { v /= 255; return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; };
+const l2s = v => { v = clamp(v, 0, 1); return 255 * (v <= .0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - .055); };
+const mul = (m, v) => m.map(r => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
+const M_RGB2XYZ = [[.4124564, .3575761, .1804375], [.2126729, .7151522, .0721750], [.0193339, .1191920, .9503041]];
+const M_XYZ2RGB = [[3.2404542, -1.5371385, -.4985314], [-.9692660, 1.8760108, .0415560], [.0556434, -.2040259, 1.0572252]];
+const BR_65_50 = [[1.0478112, .0228866, -.0501270], [.0295424, .9904844, -.0170491], [-.0092345, .0150436, .7521316]];
+const BR_50_65 = [[.9555766, -.0230393, .0631636], [-.0282895, 1.0099416, .0210077], [.0122982, -.0204830, 1.3299098]];
+const W65 = [.95047, 1, 1.08883], W50 = [.96422, 1, .82521], EPS = 216 / 24389, KAP = 24389 / 27;
+function xyz2lab(x, w) { const f = t => t > EPS ? Math.cbrt(t) : (KAP * t + 16) / 116; const fx = f(x[0] / w[0]), fy = f(x[1] / w[1]), fz = f(x[2] / w[2]); return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)]; }
+function lab2xyz([L, a, b], w) { const fy = (L + 16) / 116, fx = fy + a / 500, fz = fy - b / 200; const inv = t => { const t3 = t * t * t; return t3 > EPS ? t3 : (116 * t - 16) / KAP; }; return [inv(fx) * w[0], (L > KAP * EPS ? fy ** 3 : L / KAP) * w[1], inv(fz) * w[2]]; }
+const linOf = rgb => rgb.map(s2l);
+const xyz65 = rgb => mul(M_RGB2XYZ, linOf(rgb));
+const lab50 = rgb => xyz2lab(mul(BR_65_50, xyz65(rgb)), W50);
+const lab65 = rgb => xyz2lab(xyz65(rgb), W65);
+const linToHex = lin => toHex(...lin.map(l2s));
+const lab50ToHex = lab => linToHex(mul(M_XYZ2RGB, mul(BR_50_65, lab2xyz(lab, W50))));
+const lchOf = ([L, a, b]) => { let h = Math.atan2(b, a) * 180 / Math.PI; if (h < 0) h += 360; return [L, Math.hypot(a, b), h]; };
+const labCache = new Map();
+const labOf = hex => { let v = labCache.get(hex); if (!v) { v = lab50(rgbOf(hex)); labCache.set(hex, v); } return v; };
+function de00(l1, l2) {
+  const [L1, a1, b1] = l1, [L2, a2, b2] = l2, rad = Math.PI / 180, p7 = 25 ** 7;
+  const C1 = Math.hypot(a1, b1), C2 = Math.hypot(a2, b2), Cb = (C1 + C2) / 2;
+  const G = .5 * (1 - Math.sqrt(Cb ** 7 / (Cb ** 7 + p7)));
+  const a1p = (1 + G) * a1, a2p = (1 + G) * a2, C1p = Math.hypot(a1p, b1), C2p = Math.hypot(a2p, b2);
+  const hf = (b, a) => { if (!a && !b) return 0; const x = Math.atan2(b, a) / rad; return x < 0 ? x + 360 : x; };
+  const h1p = hf(b1, a1p), h2p = hf(b2, a2p), dL = L2 - L1, dC = C2p - C1p;
+  let dh = 0; if (C1p * C2p) { dh = h2p - h1p; if (dh > 180) dh -= 360; else if (dh < -180) dh += 360; }
+  const dH = 2 * Math.sqrt(C1p * C2p) * Math.sin(dh * rad / 2), Lb = (L1 + L2) / 2, Cbp = (C1p + C2p) / 2;
+  let hb = h1p + h2p;
+  if (C1p * C2p) hb = Math.abs(h1p - h2p) > 180 ? (hb < 360 ? (hb + 360) / 2 : (hb - 360) / 2) : hb / 2;
+  const T = 1 - .17 * Math.cos((hb - 30) * rad) + .24 * Math.cos(2 * hb * rad) + .32 * Math.cos((3 * hb + 6) * rad) - .2 * Math.cos((4 * hb - 63) * rad);
+  const Sl = 1 + .015 * (Lb - 50) ** 2 / Math.sqrt(20 + (Lb - 50) ** 2), Sc = 1 + .045 * Cbp, Sh = 1 + .015 * Cbp * T;
+  const dT = 30 * Math.exp(-(((hb - 275) / 25) ** 2)), Rc = 2 * Math.sqrt(Cbp ** 7 / (Cbp ** 7 + p7)), Rt = -Rc * Math.sin(2 * dT * rad);
+  return Math.sqrt((dL / Sl) ** 2 + (dC / Sc) ** 2 + (dH / Sh) ** 2 + Rt * (dC / Sc) * (dH / Sh));
 }
-function hslToRgb(h, s, l) { s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
-  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)); return [f(0) * 255, f(8) * 255, f(4) * 255]; }
-function toCmyk(r, g, b) { const k = 1 - Math.max(r, g, b) / 255; if (k >= 1) return [0, 0, 0, 100];
-  return [(1 - r / 255 - k) / (1 - k), (1 - g / 255 - k) / (1 - k), (1 - b / 255 - k) / (1 - k), k].map(v => Math.round(v * 100)); }
-function toLab(r, g, b) {
-  const lin = v => { v /= 255; return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; };
-  const R = lin(r), G = lin(g), B = lin(b);
-  let x = (R * .4124 + G * .3576 + B * .1805) / .95047, y = R * .2126 + G * .7152 + B * .0722, z = (R * .0193 + G * .1192 + B * .9505) / 1.08883;
-  const f = t => t > .008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116; x = f(x); y = f(y); z = f(z);
-  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
-}
-const dE = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
-function isLight(hex) { const [r, g, b] = rgbOf(hex); return (r * 299 + g * 587 + b * 114) / 1000 > 150; }
+const dE = (h1, h2) => de00(labOf(h1), labOf(h2));
+const relLum = hex => { const [r, g, b] = linOf(rgbOf(hex)); return .2126 * r + .7152 * g + .0722 * b; };
+const contrast = (a, b) => { const x = relLum(a), y = relLum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+const textOn = hex => contrast(hex, '#FFFFFF') >= contrast(hex, '#262624') ? '#FFFFFF' : '#262624';
+function toHsl(r, g, b) { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0, s = 0; const l = (mx + mn) / 2; if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; } return [h, s * 100, l * 100]; }
+function toHsb(r, g, b) { const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; let h = 0; if (d) { h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; if (h < 0) h += 360; } return [h, mx ? d / mx * 100 : 0, mx / 255 * 100]; }
+function toCmyk(r, g, b) { const k = 1 - Math.max(r, g, b) / 255; if (k >= 1) return [0, 0, 0, 100]; return [(1 - r / 255 - k) / (1 - k), (1 - g / 255 - k) / (1 - k), (1 - b / 255 - k) / (1 - k), k].map(v => Math.round(v * 100)); }
+const CVD = {
+  protan: [[.152286, 1.052583, -.204868], [.114503, .786281, .099216], [-.003882, -.048116, 1.051998]],
+  deutan: [[.367322, .860646, -.227968], [.280085, .672501, .047413], [-.011820, .042940, .968881]],
+  tritan: [[1.255528, -.076749, -.178779], [-.078411, .930809, .147602], [.004733, .691367, .303900]],
+};
+const simulate = (hex, t) => t === 'gray' ? (v => toHex(v, v, v))(l2s(relLum(hex))) : linToHex(mul(CVD[t], linOf(rgbOf(hex))));
 function info(hex) {
-  const [r, g, b] = rgbOf(hex), [h, s, l] = toHsl(r, g, b), c = toCmyk(r, g, b), L = toLab(r, g, b).map(v => Math.round(v));
-  return { hex, rgb: `${r}, ${g}, ${b}`, hsl: `${h}°, ${s}%, ${l}%`, cmyk: `${c.join('%, ')}%`, lab: `${L[0]}, ${L[1]}, ${L[2]}`, r, g, b, h, s, l, c, L };
+  const rgb = rgbOf(hex), L5 = labOf(hex), L6 = lab65(rgb), lch = lchOf(L5), hsl = toHsl(...rgb), hsb = toHsb(...rgb), cmyk = toCmyk(...rgb);
+  return {
+    hex, rgb, L5, L6, lch, hsl, hsb, cmyk,
+    sRgb: rgb.join(', '), sLab: L5.map(r1).join(', '), sLab65: L6.map(r1).join(', '),
+    sLch: `${r1(lch[0])}, ${r1(lch[1])}, ${Math.round(lch[2])}°`, sHsl: `${Math.round(hsl[0])}°, ${Math.round(hsl[1])}%, ${Math.round(hsl[2])}%`,
+    sHsb: `${Math.round(hsb[0])}°, ${Math.round(hsb[1])}%, ${Math.round(hsb[2])}%`, sCmyk: cmyk.join(', '),
+  };
+}
+/* rotate hue / change lightness in LCh (perceptual) */
+function lchShift(hex, dh = 0, L = null, cScale = 1) {
+  const [l, a, b] = labOf(hex), C = Math.hypot(a, b) * cScale, h = Math.atan2(b, a) + dh * Math.PI / 180;
+  return lab50ToHex([L ?? l, C * Math.cos(h), C * Math.sin(h)]);
 }
 
-/* named colors (approximate, for friendly labels) */
-const NAMES = [
-  ['ขาว','#FFFFFF'],['ขาวงาช้าง','#F4EFE1'],['ครีม','#F3E5C0'],['เทาอ่อน','#C8C8C8'],['เทา','#8C8C8C'],['เทาเข้ม','#4A4A4A'],['ดำ','#141414'],
-  ['แดง','#D62828'],['แดงเลือดนก','#9B1B30'],['แดงอิฐ','#B5532E'],['ชมพู','#F48FB1'],['ชมพูบานเย็น','#C2185B'],['ชมพูพาสเทล','#F8C8D4'],['โอลด์โรส','#C08081'],
-  ['ส้ม','#F57C00'],['ส้มอิฐ','#C1502E'],['พีช','#FFC8A2'],['แอปริคอต','#F7B267'],['ทอง','#C9A227'],['เหลือง','#FDD835'],['เหลืองมัสตาร์ด','#D8A31A'],['เหลืองพาสเทล','#FFF3A3'],
-  ['เขียวมะนาว','#9ACD32'],['เขียว','#2E7D32'],['เขียวใบไม้','#4C8C2B'],['เขียวมะกอก','#6B7A2E'],['เขียวมิ้นต์','#A8E6CF'],['เขียวหยก','#00A86B'],['เขียวขี้ม้า','#4B5320'],['เขียวเข้ม','#1B4332'],
-  ['ฟ้าอมเขียว','#2EC4B6'],['เทอร์ควอยซ์','#30D5C8'],['ฟ้า','#4FC3F7'],['ฟ้าพาสเทล','#BFE3F5'],['ฟ้าคราม','#1E88E5'],['น้ำเงิน','#1A3A8F'],['กรมท่า','#1C2541'],['ยีนส์','#5A7CA0'],
-  ['ม่วงลาเวนเดอร์','#B9A7E0'],['ม่วง','#7B3FA0'],['ม่วงเข้ม','#4A1A6B'],['ม่วงองุ่น','#6A2C70'],
-  ['น้ำตาลอ่อน','#C8A27C'],['เบจ','#D9C3A3'],['น้ำตาล','#7B4A2A'],['น้ำตาลเข้ม','#4A2C1A'],['น้ำตาลไม้สัก','#9A6B3F'],['คาราเมล','#B87333'],['ช็อกโกแลต','#5C3317'],['ทราย','#D8C49A'],['กากี','#B9A37E'],['ทองแดง','#B5653B'],['เงิน','#BFC1C2']
-].map(([n, h]) => ({ n, h, lab: toLab(...rgbOf(h)) }));
-function nameOf(hex) {
-  const lab = toLab(...rgbOf(hex)); let best = NAMES[0], bd = 1e9;
-  for (const c of NAMES) { const d = dE(lab, c.lab); if (d < bd) { bd = d; best = c; } }
-  return (bd < 6 ? '' : 'โทน') + best.n;
-}
+/* reference color names (Thai) with lighter/darker steps */
+const BASE = [['ขาวกระดาษ', '#F5F3EE'], ['ขาวงาช้าง', '#EFE8D8'], ['ลินิน', '#E6D3B8'], ['ครีม', '#F1E3C2'], ['ทราย', '#D8C4A0'], ['น้ำตาลทราย', '#C4A582'], ['เบจ', '#D2BFA0'], ['กากี', '#B5A27E'], ['ไม้โอ๊ค', '#C29A6B'], ['ไม้สัก', '#9A6B3F'], ['วอลนัท', '#6B4A33'], ['ช็อกโกแลต', '#4E3324'], ['คาราเมล', '#B9773A'], ['ทองแดง', '#B5653B'], ['ดินเผา', '#B5523B'], ['อิฐ', '#A0472F'], ['ส้มอิฐ', '#C8603A'], ['ส้ม', '#EE7A2B'], ['พีช', '#F4B996'], ['แอปริคอต', '#F2A65A'], ['มัสตาร์ด', '#D4A12A'], ['ออกเคอร์', '#E3B85B'], ['ทอง', '#C9A227'], ['เหลือง', '#F5D033'], ['เหลืองพาสเทล', '#F7EBA6'], ['เขียวมะนาว', '#B5CF3A'], ['เขียวมะกอก', '#6E7B3A'], ['เขียวเสจ', '#9DB09A'], ['เขียวเสจเข้ม', '#6E7F5C'], ['เขียวใบไม้', '#4C8C2B'], ['เขียวมรกต', '#228A63'], ['เขียวหยก', '#2FA37A'], ['เขียวขวด', '#1E4D3A'], ['มิ้นต์', '#AEE0C8'], ['เทอร์ควอยซ์', '#33B8B0'], ['ฟ้าทะเล', '#2D8FB5'], ['ฟ้า', '#7EC3E8'], ['ฟ้าพาสเทล', '#C6E2F2'], ['ฟ้าคราม', '#2F6FD0'], ['น้ำเงิน', '#23439A'], ['กรมท่า', '#2A3557'], ['ยีนส์', '#567AA0'], ['น้ำเงินเทา', '#355C76'], ['ลาเวนเดอร์', '#B8A9DA'], ['ม่วง', '#7A4A9E'], ['ม่วงองุ่น', '#5B2D63'], ['ชมพูพาสเทล', '#F4CCD4'], ['ชมพูกุหลาบ', '#E07A95'], ['โอลด์โรส', '#C08A8A'], ['บานเย็น', '#C2246E'], ['แดงชาด', '#D7322B'], ['แดงเลือดนก', '#8E2433'], ['แดงไวน์', '#6B1F2E'], ['เทาอ่อน', '#D5D4D0'], ['เทาปูน', '#B3B1AC'], ['เทา', '#8A8985'], ['เทาชาร์โคล', '#4A4A48'], ['ดำ', '#1E1E1E'], ['เงิน', '#BFC1C2']];
+const REF = [];
+BASE.forEach(([n, h]) => {
+  const [L, a, b] = labOf(h);
+  [-2, -1, 0, 1, 2].forEach(k => {
+    const nl = L + k * 5; if (nl < 4 || nl > 98) return;
+    const hx = k ? lab50ToHex([nl, a, b]) : h;
+    REF.push({ n: k ? `${n} ${k > 0 ? '+' : '−'}${Math.abs(k)}` : n, base: n, h: hx });
+  });
+});
+const closest = (hex, n = 3, pool = REF) => pool.map(r => ({ ...r, d: dE(hex, r.h) })).sort((a, b) => a.d - b.d).slice(0, n);
+const nameOf = hex => closest(hex, 1)[0].base;
+const verdict = d => d < 1 ? 'เหมือนกัน' : d < 2 ? 'แทบแยกไม่ออก' : d < 3.5 ? 'ใกล้มาก' : d < 5 ? 'ใกล้เคียง' : 'ต่างกันชัด';
+const SRC = { camera: 'วัดด้วยกล้อง', device: 'วัดด้วยเครื่อง', image: 'จากภาพ', community: 'จากชุมชน', manual: 'ป้อนเอง', harmony: 'จากชุดสีแนะนำ' };
+const SRC_EN = { camera: 'Measured · camera', device: 'Measured · device', image: 'From photo', community: 'From community', manual: 'Saved', harmony: 'Suggested' };
 
-/* ============ storage ============ */
+/* =========================================================
+   Storage
+   ========================================================= */
 const KEY = 'picker.v1';
-let S;
-try { S = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
-if (!S || !S.colors) S = { colors: [], groups: [{ id: 'g' + uid(), name: 'โปรเจกต์แรก' }], likes: {}, shared: [], calib: null, calibOn: false };
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('บันทึกไม่ได้: พื้นที่เก็บข้อมูลเต็มหรือถูกปิด'); } }
-function addColor(hex, name, groupId, source) {
-  const c = { id: uid(), hex: hex.toUpperCase(), name: name || nameOf(hex), groupId: groupId || null, source: source || 'camera', t: Date.now() };
-  S.colors.unshift(c); save(); return c;
+let S = load();
+function load() {
+  let s; try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (!s || !Array.isArray(s.colors)) s = { colors: [], groups: [] };
+  s.groups ||= []; s.likes ||= {}; s.shared ||= []; s.seq ||= 0; s.me ||= ''; s.calibOn = !!s.calibOn;
+  [...s.colors].reverse().forEach(c => { if (!c.no) c.no = ++s.seq; c.t ||= Date.now(); c.source ||= 'camera'; });
+  s.groups.forEach(g => { g.t ||= Date.now(); g.desc ??= ''; });
+  if (!s.seeded) {
+    s.seeded = true;
+    if (!s.colors.length) {
+      const g = { id: 'g' + uid(), name: 'Warm & Natural', desc: 'โทนสีธรรมชาติ อบอุ่น เหมาะกับงานตกแต่งภายในที่ต้องการความผ่อนคลาย', example: true, t: Date.now() - 2 * 864e5 };
+      s.groups = s.groups.filter(x => x.name !== 'โปรเจกต์แรก');
+      s.groups.unshift(g);
+      [['#C5A483', 'Warm Sand'], ['#E6D3B8', 'Linen'], ['#6E7F5C', 'Sage Green'], ['#E3B85B', 'Ochre']].forEach(([hex, name], i) =>
+        s.colors.unshift({ id: uid(), hex, name, groupId: g.id, source: 'camera', t: Date.now() - 6e5 + i, no: ++s.seq, example: true }));
+      s.colors.reverse();
+    }
+  }
+  return s;
 }
-function addGroup(name) { const g = { id: 'g' + uid(), name: name || 'กลุ่มใหม่' }; S.groups.push(g); save(); return g; }
-const groupName = id => (S.groups.find(g => g.id === id) || {}).name || 'ไม่มีกลุ่ม';
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('บันทึกไม่ได้ พื้นที่เก็บข้อมูลในเบราว์เซอร์เต็ม ลองลบภาพในกลุ่มสีเก่าออก'); } }
+const getColor = id => S.colors.find(c => c.id === id);
+const getGroup = id => S.groups.find(g => g.id === id);
+const groupColors = gid => S.colors.filter(c => c.groupId === gid).sort((a, b) => a.t - b.t);
+function addColor(hex, o = {}) {
+  const c = { id: uid(), hex: hex.toUpperCase(), name: o.name || nameOf(hex), groupId: o.groupId === undefined ? (getGroup(S.lastGroup) ? S.lastGroup : null) : o.groupId, source: o.source || 'manual', t: Date.now(), no: ++S.seq };
+  S.colors.unshift(c); touchGroup(c.groupId); save(); return c;
+}
+function addGroup(name, extra = {}) { const g = { id: 'g' + uid(), name: name || 'กลุ่มใหม่', desc: '', t: Date.now(), ...extra }; S.groups.unshift(g); save(); return g; }
+function touchGroup(gid) { const g = getGroup(gid); if (g) g.t = Date.now(); }
+function mesh(cols) {
+  if (!cols.length) return 'background:#E2DFD8';
+  const c = i => cols[i % cols.length];
+  return `background:radial-gradient(at 18% 22%,${c(0)} 0,transparent 58%),radial-gradient(at 85% 18%,${c(1)} 0,transparent 55%),radial-gradient(at 70% 85%,${c(2)} 0,transparent 60%),radial-gradient(at 15% 90%,${c(3)} 0,transparent 55%),${c(0)}`;
+}
+const groupArt = g => g.thumb ? `background-image:url(${g.thumb})` : mesh(groupColors(g.id).map(c => c.hex));
+const stripHtml = (hexes, tag = 'div', act = '') => hexes.map(h => `<${tag} style="background:${h}" ${act ? `data-act="${act}" data-hex="${h}"` : ''} aria-label="${h}"></${tag}>`).join('');
 
-/* ============ ui helpers ============ */
+/* =========================================================
+   UI primitives: toast, sheet, ask, confirm, pages
+   ========================================================= */
 let toastT;
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 1800); }
+function toast(msg, label, fn) {
+  const t = $('#toast'), b = $('#toastBtn');
+  $('#toastMsg').textContent = msg; b.hidden = !label; t.classList.toggle('has', !!label);
+  if (label) { b.textContent = label; b.onclick = () => { t.classList.remove('on'); fn(); }; }
+  t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), label ? 4000 : 2000);
+}
 async function copy(text, label) {
   try { await navigator.clipboard.writeText(text); }
-  catch (e) { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
-  toast('คัดลอก ' + (label || text) + ' แล้ว');
+  catch (e) { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (_) {} ta.remove(); }
+  toast('คัดลอก ' + (label || (text.length > 40 ? 'แล้ว' : text)) + (label || text.length <= 40 ? ' แล้ว' : ''));
 }
-function openSheet(html, onMount) { $('#sheetBody').innerHTML = html; $('#scrim').classList.add('on'); $('#sheet').classList.add('on'); onMount && onMount($('#sheetBody')); }
-function closeSheet() { $('#scrim').classList.remove('on'); $('#sheet').classList.remove('on'); }
+let sheetClose = null;
+function openSheet(html, mount, onClose) {
+  if (sheetClose) { const f = sheetClose; sheetClose = null; f(); }
+  const b = $('#sheetBody'); b.innerHTML = html; b._acts = mount ? (mount(b) || {}) : {};
+  sheetClose = onClose || (() => {});
+  $('#scrim').classList.add('on'); $('#sheet').classList.add('on'); $('#sheet').scrollTop = 0;
+}
+function closeSheet() {
+  $('#scrim').classList.remove('on'); $('#sheet').classList.remove('on');
+  if (sheetClose) { const f = sheetClose; sheetClose = null; f(); }
+}
 $('#scrim').onclick = closeSheet;
-function download(name, data, type) {
-  const blob = data instanceof Blob ? data : new Blob([data], { type: type || 'text/plain' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
-  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  toast('ดาวน์โหลด ' + name);
-}
-function groupOptions(sel, withNew = true) {
-  return S.groups.map(g => `<option value="${g.id}" ${g.id === sel ? 'selected' : ''}>${esc(g.name)}</option>`).join('')
-    + '<option value="" ' + (sel === null ? 'selected' : '') + '>— ไม่มีกลุ่ม —</option>'
-    + (withNew ? '<option value="__new">＋ สร้างกลุ่มใหม่…</option>' : '');
-}
-function resolveGroup(v) { if (v === '__new') { const n = prompt('ชื่อกลุ่มใหม่'); return n ? addGroup(n.trim()).id : null; } return v || null; }
-
-/* save-color sheet (used by camera & image) */
-let lastGroup = null;
-function saveSheet(hex, source) {
-  const i = info(hex);
-  openSheet(`
-    <div class="row"><div class="bigsw" style="background:${hex};width:72px;min-height:72px"></div>
-      <div><div class="mono" style="font-size:22px">${hex}</div><div class="muted tiny">RGB ${i.rgb} · CMYK ${i.cmyk}</div></div></div>
-    <label class="l">ชื่อสี</label><input class="f" id="sName" value="${esc(nameOf(hex))}">
-    <label class="l">กลุ่ม</label><select class="f" id="sGroup">${groupOptions(lastGroup ?? S.groups[0]?.id)}</select>
-    <div class="row" style="margin-top:14px"><button class="btn grow" id="sCancel">ยกเลิก</button><button class="btn pri grow" id="sOk">บันทึกลงคลัง</button></div>`, b => {
-    b.querySelector('#sCancel').onclick = closeSheet;
-    b.querySelector('#sOk').onclick = () => {
-      const gid = resolveGroup(b.querySelector('#sGroup').value); lastGroup = gid;
-      addColor(hex, b.querySelector('#sName').value.trim(), gid, source);
-      closeSheet(); toast('บันทึก ' + hex + ' แล้ว'); renderLibrary();
-    };
+function ask(title, val = '', o = {}) {
+  return new Promise(res => {
+    let v = null;
+    openSheet(`<h3 class="st">${esc(title)}</h3>${o.text ? `<p class="sub" style="margin:0 0 12px">${esc(o.text)}</p>` : ''}
+      ${o.area ? `<textarea class="f" id="askIn" placeholder="${esc(o.ph || '')}">${esc(val)}</textarea>` : `<input class="f" id="askIn" value="${esc(val)}" placeholder="${esc(o.ph || '')}" autocomplete="off" ${o.mono ? 'style="font-family:var(--f-disp)"' : ''}>`}
+      <div class="row" style="margin-top:14px"><button class="btn soft grow" data-act="no">ยกเลิก</button><button class="btn pri grow" data-act="ok">${esc(o.ok || 'ตกลง')}</button></div>`,
+      b => { const inp = $('#askIn', b); setTimeout(() => { inp.focus(); inp.select?.(); }, 280);
+        const ok = () => { v = inp.value.trim(); closeSheet(); };
+        if (!o.area) inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); ok(); } };
+        return { no: closeSheet, ok }; }, () => res(v));
   });
 }
+function confirmBox(title, text, okLabel = 'ยืนยัน', danger = true) {
+  return new Promise(res => {
+    let v = false;
+    openSheet(`<h3 class="st">${esc(title)}</h3><p class="sub" style="margin:0 0 16px">${esc(text)}</p>
+      <div class="row"><button class="btn soft grow" data-act="no">ยกเลิก</button><button class="btn ${danger ? 'dark' : 'pri'} grow" data-act="ok">${esc(okLabel)}</button></div>`,
+      () => ({ no: closeSheet, ok: () => { v = true; closeSheet(); } }), () => res(v));
+  });
+}
+function chooseGroup(current) {
+  return new Promise(res => {
+    let v;
+    openSheet(`<h3 class="st">ย้ายไปกลุ่ม</h3><div class="list">
+      ${S.groups.map(g => `<button data-act="pick" data-id="${g.id}" class="${g.id === current ? 'cur' : ''}"><div class="strip">${stripHtml(groupColors(g.id).slice(0, 6).map(c => c.hex))}</div><span class="grow">${esc(g.name)}</span>${g.id === current ? ic('check', 20) : ''}</button>`).join('')}
+      <button data-act="pick" data-id="" class="${!current ? 'cur' : ''}"><div class="strip" style="background:var(--line)"></div><span class="grow">ไม่มีกลุ่ม</span>${!current ? ic('check', 20) : ''}</button>
+      <button data-act="new">${ic('plus', 20)}<span class="grow">สร้างกลุ่มใหม่</span></button></div>`,
+      () => ({ pick: t => { v = t.dataset.id || null; closeSheet(); }, new: async () => { const n = await ask('ชื่อกลุ่มใหม่', '', { ph: 'เช่น บ้านคุณเอ · ห้องนั่งเล่น' }); res(n ? addGroup(n).id : undefined); } }),
+      () => { if (v !== undefined) res(v); else if (!$('#askIn')) res(undefined); });
+  });
+}
+/* page stack */
+const pages = []; let ignorePop = false;
+function pushPage(build) {
+  const el = document.createElement('div'); el.className = 'page'; document.body.appendChild(el);
+  const p = { el, render() { const y = el.scrollTop; build(el, p); el.scrollTop = y; } };
+  pages.push(p); p.render();
+  void el.offsetWidth; setTimeout(() => el.classList.add('on'), 16);
+  document.body.classList.add('lock');
+  history.pushState({ pg: pages.length }, '');
+  if (tab === 'measure') stopCam();
+  return p;
+}
+function popPage(fromPop) {
+  const p = pages.pop(); if (!p) return;
+  p.el.classList.remove('on'); setTimeout(() => p.el.remove(), 320);
+  if (!pages.length) document.body.classList.remove('lock');
+  if (!fromPop) { ignorePop = true; history.back(); }
+  refreshAll();
+}
+window.addEventListener('popstate', () => {
+  if (ignorePop) { ignorePop = false; return; }
+  if ($('#sheet').classList.contains('on')) { closeSheet(); if (pages.length) history.pushState({ pg: pages.length }, ''); return; }
+  if (pages.length) popPage(true);
+});
+function refreshAll() { renderTab(); pages.forEach(p => p.render()); }
 
-/* ============ tabs ============ */
+/* global click delegation */
+document.addEventListener('click', e => {
+  const cp = e.target.closest('[data-copy]');
+  if (cp) { copy(cp.dataset.copy, cp.dataset.label); return; }
+  const t = e.target.closest('[data-act]'); if (!t) return;
+  let n = t; while (n && !n._acts) n = n.parentElement;
+  const f = n && n._acts[t.dataset.act]; if (f) { e.preventDefault(); f(t, e); }
+});
+
+/* =========================================================
+   Tabs
+   ========================================================= */
 let tab = 'measure';
 function go(t) {
   tab = t;
-  $$('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
-  $$('section.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + t));
+  $$('.tabbar button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  $$('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + t));
   if (t !== 'measure') stopCam();
-  if (t === 'library') renderLibrary();
-  if (t === 'community') renderCommunity();
-  if (t === 'export') renderExport();
-  window.scrollTo(0, 0);
+  renderTab(); window.scrollTo(0, 0);
 }
-$$('nav.tabs button').forEach(b => b.onclick = () => go(b.dataset.tab));
+function renderTab() {
+  if (tab === 'library') renderLibrary();
+  if (tab === 'image') renderImageTab();
+  if (tab === 'community') renderCommunity();
+}
+$$('.tabbar button').forEach(b => b.onclick = () => { while (pages.length) popPage(); go(b.dataset.tab); });
 
-/* ============ 01 MEASURE ============ */
-const video = $('#video'), cam = $('#cam');
+/* =========================================================
+   01 · วัดสี  (phone camera)
+   ========================================================= */
+const video = $('#video'), camBox = $('#camBox');
 const sc = document.createElement('canvas'), sctx = sc.getContext('2d', { willReadFrequently: true });
-let stream = null, track = null, raf = 0, frozen = false, facing = 'environment', torchOn = false;
-let pt = { x: .5, y: .5 }, radius = 5, raw = null, cur = null, lastT = 0;
+const M = { stream: null, track: null, raf: 0, frozen: false, facing: 'environment', torch: false, pt: { x: .5, y: .5 }, r: 5, raw: null, cur: null, src: 'camera', lastT: 0, last: null };
+$('#btnTorch').innerHTML = ic('torch', 20); $('#btnCal').innerHTML = ic('target', 20);
+$('[data-act="flip"]').innerHTML = ic('flip', 20); $('#btnFreeze').innerHTML = ic('pause', 22);
+$('#libAdd').innerHTML = ic('plus', 24); $('#meBtn').innerHTML = ic('user', 24);
 
 async function startCam() {
   if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
-    $('#camMsg').innerHTML = 'กล้องสดใช้ได้เฉพาะลิงก์ <b>https</b> — ใช้ปุ่ม “ถ่ายภาพ” แทนได้'; return;
+    $('#camMsg').innerHTML = 'กล้องสดต้องเปิดผ่านลิงก์ https · ใช้ปุ่ม “หรือถ่ายภาพ” แทนได้'; return;
   }
   try {
     stopCam();
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false });
-    video.srcObject = stream; await video.play();
-    track = stream.getVideoTracks()[0];
-    const caps = track.getCapabilities ? track.getCapabilities() : {};
+    M.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: M.facing }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false });
+    video.srcObject = M.stream; await video.play();
+    M.track = M.stream.getVideoTracks()[0];
+    const caps = M.track.getCapabilities ? M.track.getCapabilities() : {};
     $('#btnTorch').hidden = !caps.torch;
-    $('#camOv').style.display = 'none';
-    frozen = false; $('#btnFreeze').textContent = 'หยุดภาพ'; $('#btnFreeze').classList.remove('on');
-    loop();
+    $('#camOv').hidden = true; setFreeze(false); placeRet(); loop();
   } catch (e) {
-    $('#camMsg').textContent = 'เปิดกล้องไม่ได้ (' + (e.name || e) + ') — อนุญาตการใช้กล้อง หรือใช้ปุ่ม “ถ่ายภาพ”';
+    $('#camMsg').textContent = e.name === 'NotAllowedError' ? 'ยังไม่ได้อนุญาตกล้อง · เปิดสิทธิ์กล้องในการตั้งค่าเบราว์เซอร์ หรือใช้ปุ่ม “หรือถ่ายภาพ”' : 'เปิดกล้องไม่ได้ (' + (e.name || e) + ') · ใช้ปุ่ม “หรือถ่ายภาพ” แทนได้';
   }
 }
 function stopCam() {
-  cancelAnimationFrame(raf);
-  if (stream) stream.getTracks().forEach(t => t.stop());
-  stream = null; track = null; torchOn = false; $('#btnTorch').classList.remove('on');
-  $('#camOv').style.display = '';
+  clearInterval(M.raf);
+  if (M.stream) M.stream.getTracks().forEach(t => t.stop());
+  M.stream = null; M.track = null; M.torch = false; $('#btnTorch').classList.remove('on');
+  $('#camOv').hidden = false;
 }
-function loop(t = 0) {
-  raf = requestAnimationFrame(loop);
-  if (frozen || t - lastT < 90 || !video.videoWidth) return;
-  lastT = t; sample();
+function loop() {
+  clearInterval(M.raf);
+  M.raf = setInterval(() => { if (!M.frozen && video.videoWidth) sample(); }, 90);
 }
 function sample() {
-  const vw = video.videoWidth, vh = video.videoHeight, W = cam.clientWidth, H = cam.clientHeight;
-  const scale = Math.max(W / vw, H / vh), ox = (W - vw * scale) / 2, oy = (H - vh * scale) / 2;
-  const nx = (pt.x * W - ox) / scale, ny = (pt.y * H - oy) / scale;
-  const n = radius * 2 + 1; sc.width = sc.height = n;
-  sctx.drawImage(video, nx - radius, ny - radius, n, n, 0, 0, n, n);
+  const vw = video.videoWidth, vh = video.videoHeight, W = camBox.clientWidth, H = camBox.clientHeight;
+  if (!vw) return;
+  const s = Math.max(W / vw, H / vh), ox = (W - vw * s) / 2, oy = (H - vh * s) / 2;
+  const nx = (M.pt.x * W - ox) / s, ny = (M.pt.y * H - oy) / s, R = M.r, n = R * 2 + 1;
+  sc.width = sc.height = n;
+  sctx.drawImage(video, nx - R, ny - R, n, n, 0, 0, n, n);
   const d = sctx.getImageData(0, 0, n, n).data; let r = 0, g = 0, b = 0, c = 0;
-  // circular mask, average in linear light for accuracy
-  const lin = v => (v / 255) ** 2.2;
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    if ((x - radius) ** 2 + (y - radius) ** 2 > radius * radius + 1) continue;
-    const i = (y * n + x) * 4; r += lin(d[i]); g += lin(d[i + 1]); b += lin(d[i + 2]); c++;
+    if ((x - R) ** 2 + (y - R) ** 2 > R * R + 1) continue;
+    const i = (y * n + x) * 4; r += s2l(d[i]); g += s2l(d[i + 1]); b += s2l(d[i + 2]); c++;
   }
-  raw = [r, g, b].map(v => (v / c) ** (1 / 2.2) * 255);
-  showLive();
+  M.raw = [r / c, g / c, b / c];
+  showCam();
 }
-function showLive() {
-  if (!raw) return;
-  let [r, g, b] = raw;
-  if (S.calibOn && S.calib) { r *= S.calib[0]; g *= S.calib[1]; b *= S.calib[2]; }
-  cur = toHex(r, g, b);
-  const i = info(cur);
-  $('#liveSw').style.background = cur; $('#liveHex').textContent = cur; $('#liveName').textContent = nameOf(cur);
-  $('#liveKv').innerHTML = `<span>RGB</span><span>${i.rgb}</span><span>HSL</span><span>${i.hsl}</span><span>CMYK</span><span>${i.cmyk}</span><span>LAB</span><span>${i.lab}</span>`;
+function showCam() {
+  if (!M.raw) return;
+  let lin = M.raw;
+  if (S.calibOn && S.calib) lin = lin.map((v, i) => v * S.calib[i]);
+  setLive(linToHex(lin), 'camera');
 }
-function placeReticle() {
-  const r = $('#reticle'); r.style.left = pt.x * 100 + '%'; r.style.top = pt.y * 100 + '%';
-  const box = $('#retBox'), px = Math.max(2, Math.min(40, radius * 2 * (cam.clientWidth / (video.videoWidth || 1280)) * 1.4));
-  box.style.width = box.style.height = px + 'px'; box.style.borderRadius = '50%';
+function setLive(hex, src) {
+  M.cur = hex; M.src = src;
+  const I = info(hex), live = $('#live');
+  live.style.background = hex; live.style.color = textOn(hex);
+  $('#liveHex').textContent = hex;
+  $('#liveLab').textContent = M.frozen ? 'COLOR · HOLD' : 'COLOR · LIVE';
+  $('#liveSrc').textContent = nameOf(hex);
+  $('#liveMeta').textContent = `RGB ${I.sRgb}  ·  Lab ${I.sLab}`;
 }
-cam.addEventListener('pointerdown', e => {
-  if (!stream || e.target.closest('.tools')) return;
-  const rc = cam.getBoundingClientRect();
-  pt = { x: (e.clientX - rc.left) / rc.width, y: (e.clientY - rc.top) / rc.height };
-  placeReticle(); if (frozen) { frozen = false; sample(); frozen = true; }
+function placeRet() {
+  const r = $('#ret'); r.style.left = M.pt.x * 100 + '%'; r.style.top = M.pt.y * 100 + '%';
+  const vw = video.videoWidth || 1280, vh = video.videoHeight || 960;
+  const s = Math.max(camBox.clientWidth / vw, camBox.clientHeight / vh);
+  const px = clamp((M.r * 2 + 1) * s, 8, 60);
+  $('#retDot').style.width = $('#retDot').style.height = px + 'px';
+}
+function setFreeze(v) {
+  M.frozen = v; $('#btnFreeze').innerHTML = ic(v ? 'play' : 'pause', 22); $('#btnFreeze').classList.toggle('on', v);
+  if (M.stream) v ? video.pause() : video.play();
+  if (M.cur) setLive(M.cur, M.src);
+}
+camBox.addEventListener('pointerdown', e => {
+  if (!M.stream || e.target.closest('.side,.bl')) return;
+  const rc = camBox.getBoundingClientRect();
+  M.pt = { x: clamp((e.clientX - rc.left) / rc.width, .02, .98), y: clamp((e.clientY - rc.top) / rc.height, .02, .98) };
+  placeRet(); sample();
 });
-$('#btnStart').onclick = startCam;
-$('#btnFlip').onclick = () => { facing = facing === 'environment' ? 'user' : 'environment'; if (stream) startCam(); };
-$('#btnTorch').onclick = async () => {
-  if (!track) return; torchOn = !torchOn;
-  try { await track.applyConstraints({ advanced: [{ torch: torchOn }] }); $('#btnTorch').classList.toggle('on', torchOn); }
-  catch (e) { toast('เปิดไฟฉายไม่ได้'); }
+function pick() {
+  if (!M.cur) return toast('เปิดกล้องแล้วเล็งที่วัสดุก่อน');
+  if (M.last && M.last.hex === M.cur && Date.now() - M.last.t < 1500) return;
+  const c = addColor(M.cur, { source: M.src }); M.last = { hex: M.cur, t: Date.now() };
+  navigator.vibrate?.(18);
+  const live = $('#live'); live.classList.remove('flash'); void live.offsetWidth; live.classList.add('flash');
+  const g = getGroup(c.groupId);
+  toast(`เก็บ ${c.hex} เข้า${g ? 'กลุ่ม “' + g.name + '”' : 'คลัง'}แล้ว`, 'ดูสี', () => openColor(c.id));
+}
+$('#v-measure')._acts = {
+  start: startCam,
+  flip: () => { M.facing = M.facing === 'environment' ? 'user' : 'environment'; if (M.stream) startCam(); },
+  torch: async () => { if (!M.track) return; M.torch = !M.torch; try { await M.track.applyConstraints({ advanced: [{ torch: M.torch }] }); $('#btnTorch').classList.toggle('on', M.torch); } catch (e) { toast('เปิดไฟฉายไม่ได้ในอุปกรณ์นี้'); } },
+  freeze: () => setFreeze(!M.frozen),
+  size: t => { $$('#sizeSeg button').forEach(x => x.classList.toggle('on', x === t)); M.r = +t.dataset.r; placeRet(); sample(); },
+  pick, calib: calibSheet,
 };
-$('#btnFreeze').onclick = () => {
-  frozen = !frozen; $('#btnFreeze').textContent = frozen ? 'วัดต่อ' : 'หยุดภาพ'; $('#btnFreeze').classList.toggle('on', frozen);
-  frozen ? video.pause() : video.play();
-};
-$$('#segSize button').forEach(b => b.onclick = () => {
-  $$('#segSize button').forEach(x => x.classList.toggle('on', x === b)); radius = +b.dataset.r; placeReticle();
-  if (frozen) { frozen = false; sample(); frozen = true; }
-});
-$('#btnCal').onclick = () => {
-  openSheet(`
-    <b style="font-size:17px">คาลิเบรตสมดุลแสงขาว</b>
-    <p class="muted">วางกระดาษขาว (A4 ทั่วไป) ใต้แสงเดียวกับวัสดุ แล้วเล็งวงกลมไปที่กระดาษ กด “ตั้งค่าขาว” แอปจะชดเชยสีของแสงให้ค่าที่วัดได้ใกล้สีจริงขึ้น</p>
-    <div class="row"><button class="btn pri grow" id="cSet" ${raw ? '' : 'disabled'}>ตั้งค่าขาวจากจุดนี้</button></div>
-    <div class="row" style="margin-top:8px">
-      <button class="btn grow ${S.calibOn ? 'on' : ''}" id="cToggle" ${S.calib ? '' : 'disabled'}>${S.calibOn ? 'ใช้งานอยู่ — ปิด' : 'เปิดใช้งาน'}</button>
-      <button class="btn grow danger" id="cClear" ${S.calib ? '' : 'disabled'}>ล้างค่า</button></div>
-    ${raw ? '' : '<p class="tiny muted">เปิดกล้องก่อนเพื่อวัดค่าขาว</p>'}`, b => {
-    b.querySelector('#cSet').onclick = () => {
-      const t = 242; S.calib = raw.map(v => clamp(t / Math.max(v, 8), .3, 4)); S.calibOn = true; save(); updCal(); showLive(); closeSheet(); toast('คาลิเบรตแล้ว');
-    };
-    b.querySelector('#cToggle').onclick = () => { S.calibOn = !S.calibOn; save(); updCal(); showLive(); closeSheet(); };
-    b.querySelector('#cClear').onclick = () => { S.calib = null; S.calibOn = false; save(); updCal(); showLive(); closeSheet(); };
-  });
-};
-function updCal() { $('#calBadge').hidden = !(S.calibOn && S.calib); $('#btnCal').classList.toggle('on', !!(S.calibOn && S.calib)); }
-$('#btnPick').onclick = () => {
-  if (!cur) return toast('เปิดกล้องแล้วเล็งที่วัสดุก่อน');
-  if (navigator.vibrate) navigator.vibrate(20);
-  saveSheet(cur, 'camera');
-};
-$('#fileCapture').onchange = e => { const f = e.target.files[0]; if (f) { go('image'); loadImage(f); } e.target.value = ''; };
-window.addEventListener('resize', placeReticle);
+function calibSheet() {
+  const on = S.calibOn && S.calib;
+  openSheet(`<h3 class="st">คาลิเบรตแสงขาว</h3>
+    <p class="sub" style="margin:0 0 14px">วางกระดาษขาว A4 ใต้แสงเดียวกับวัสดุ เล็งกรอบไปที่กระดาษ แล้วกด “ตั้งค่าขาว” แอปจะชดเชยสีของแสง (เช่นไฟเหลือง) ให้ค่าที่วัดได้ใกล้สีจริงขึ้น</p>
+    <button class="btn pri big" style="width:100%" data-act="set" ${M.raw ? '' : 'disabled'}>${ic('target', 20)}ตั้งค่าขาวจากจุดนี้</button>
+    ${M.raw ? '' : '<p class="sub tiny" style="margin:8px 0 0">เปิดกล้องก่อนเพื่อวัดค่าขาว</p>'}
+    <div class="row" style="margin-top:10px">
+      <button class="btn soft grow" data-act="tog" ${S.calib ? '' : 'disabled'}>${on ? 'ปิดการชดเชย' : 'เปิดการชดเชย'}</button>
+      <button class="btn soft grow" data-act="clr" ${S.calib ? '' : 'disabled'}>ล้างค่า</button></div>`,
+    () => ({
+      set: () => { const t = s2l(242); S.calib = M.raw.map(v => clamp(t / Math.max(v, .003), .25, 4)); S.calibOn = true; save(); updCal(); showCam(); closeSheet(); toast('คาลิเบรตแล้ว · ค่าที่วัดต่อจากนี้ชดเชยแสงให้แล้ว'); },
+      tog: () => { S.calibOn = !S.calibOn; save(); updCal(); showCam(); closeSheet(); },
+      clr: () => { S.calib = null; S.calibOn = false; save(); updCal(); showCam(); closeSheet(); },
+    }));
+}
+function updCal() { const on = !!(S.calibOn && S.calib); $('#calTag').hidden = !on; $('#btnCal').classList.toggle('on', on); }
+$('#fileCapture').onchange = e => { const f = e.target.files[0]; if (f) openImage(f); e.target.value = ''; };
+window.addEventListener('resize', placeRet);
 document.addEventListener('visibilitychange', () => { if (document.hidden) stopCam(); });
 
-/* ============ 02 LIBRARY ============ */
-let libGroup = 'all';
+/* =========================================================
+   02 · คลังสี
+   ========================================================= */
+const L = { mode: 'groups' };
+$('#libSearch').addEventListener('input', () => renderLibBody());
 function renderLibrary() {
-  const chips = [['all', 'ทั้งหมด (' + S.colors.length + ')'], ...S.groups.map(g => [g.id, g.name + ' (' + S.colors.filter(c => c.groupId === g.id).length + ')'])];
-  if (S.colors.some(c => !c.groupId)) chips.push(['none', 'ไม่มีกลุ่ม']);
-  $('#groupChips').innerHTML = chips.map(([id, n]) => `<button class="chip ${libGroup === id ? 'on' : ''}" data-g="${id}">${esc(n)}</button>`).join('')
-    + '<button class="chip" data-g="__new">＋ กลุ่มใหม่</button>';
-  $$('#groupChips .chip').forEach(b => b.onclick = () => {
-    if (b.dataset.g === '__new') { const n = prompt('ชื่อกลุ่มใหม่'); if (n) { libGroup = addGroup(n.trim()).id; } }
-    else libGroup = b.dataset.g;
-    renderLibrary();
-  });
-  const g = S.groups.find(x => x.id === libGroup);
-  $('#groupActions').innerHTML = g ? `<button class="btn sm" id="gRen">เปลี่ยนชื่อ</button><button class="btn sm" id="gShare">แชร์</button><button class="btn sm" id="gExp">ส่งออก</button><button class="btn sm danger" id="gDel">ลบกลุ่ม</button>` : '';
-  if (g) {
-    $('#gRen').onclick = () => { const n = prompt('ชื่อกลุ่ม', g.name); if (n) { g.name = n.trim(); save(); renderLibrary(); } };
-    $('#gDel').onclick = () => {
-      if (!confirm(`ลบกลุ่ม “${g.name}”? (สีในกลุ่มจะยังอยู่ในคลัง)`)) return;
-      S.colors.forEach(c => { if (c.groupId === g.id) c.groupId = null; }); S.groups = S.groups.filter(x => x !== g); libGroup = 'all'; save(); renderLibrary();
-    };
-    $('#gShare').onclick = () => shareGroup(g.id);
-    $('#gExp').onclick = () => { expSrc = g.id; go('export'); };
+  const pins = S.colors.filter(c => c.pin).length;
+  $('#libSeg').innerHTML = [['groups', `กลุ่มสี · ${S.groups.length}`], ['colors', `สีทั้งหมด · ${S.colors.length}`], ['pins', `ปักหมุด · ${pins}`]]
+    .map(([k, n]) => `<button class="chip ${L.mode === k ? 'on' : ''}" data-act="libmode" data-m="${k}">${n}</button>`).join('');
+  renderLibBody();
+}
+function renderLibBody() {
+  const q = $('#libSearch').value.trim().toLowerCase(), qh = q.replace('#', '');
+  const body = $('#libBody');
+  if (L.mode === 'groups') {
+    const gs = S.groups.filter(g => !q || g.name.toLowerCase().includes(q) || groupColors(g.id).some(c => c.hex.toLowerCase().includes(qh)));
+    const loose = S.colors.filter(c => !c.groupId).length;
+    body.innerHTML = (gs.length ? `<div class="pgrid">${gs.map(g => { const cs = groupColors(g.id); return `
+      <button class="pcard" data-act="group" data-id="${g.id}"><div class="art" style="${groupArt(g)}"></div>
+      <div class="bd"><b>${esc(g.name)}</b><div class="strip">${stripHtml(cs.slice(0, 8).map(c => c.hex))}</div>
+      <span class="sub tiny">${cs.length} สี · ${ago(g.t)}${g.example ? ' · ตัวอย่าง' : ''}</span></div></button>`; }).join('')}</div>`
+      : `<div class="empty">${q ? 'ไม่พบกลุ่มที่ค้นหา' : 'ยังไม่มีกลุ่มสี<br>กด + เพื่อสร้างกลุ่มแรก'}</div>`)
+      + (loose && !q ? `<button class="btn soft mt" style="width:100%" data-act="libmode" data-m="colors">สีที่ยังไม่มีกลุ่ม ${loose} สี</button>` : '');
+  } else {
+    let cs = S.colors.filter(c => (L.mode !== 'pins' || c.pin) && (!q || c.name.toLowerCase().includes(q) || c.hex.toLowerCase().includes(qh)));
+    body.innerHTML = cs.length ? `<div class="cgrid">${cs.map(c => `<button class="tile" data-act="color" data-id="${c.id}"><div class="sw" style="background:${c.hex}"></div>${c.pin ? `<span class="pin">${ic('bookmarkF', 13)}</span>` : ''}<div class="t"><b>${c.hex}</b><span>${esc(c.name)}</span></div></button>`).join('')}</div>`
+      : `<div class="empty">${q ? 'ไม่พบสีที่ค้นหา' : L.mode === 'pins' ? 'ยังไม่มีสีที่ปักหมุด<br>กดไอคอนบุ๊กมาร์กในหน้าสีเพื่อปักหมุด' : 'ยังไม่มีสีในคลัง<br>ไปที่ “วัดสี” แล้วจิ้มของจริงได้เลย'}</div>`;
   }
-  const q = $('#libSearch').value.trim().toLowerCase();
-  const list = S.colors.filter(c => (libGroup === 'all' || (libGroup === 'none' ? !c.groupId : c.groupId === libGroup))
-    && (!q || c.name.toLowerCase().includes(q) || c.hex.toLowerCase().includes(q.replace('#', ''))));
-  $('#libGrid').innerHTML = list.length ? list.map(c => `<button class="sw" data-id="${c.id}"><div class="c" style="background:${c.hex}"></div><div class="t"><b>${esc(c.name)}</b><span>${c.hex}</span></div></button>`).join('')
-    : `<div class="empty" style="grid-column:1/-1">${S.colors.length ? 'ไม่พบสี' : 'ยังไม่มีสีในคลัง<br><span class="tiny">ไปที่ “วัดสี” แล้วจิ้มของจริงได้เลย</span>'}</div>`;
-  $$('#libGrid .sw').forEach(b => b.onclick = () => colorDetail(b.dataset.id));
 }
-$('#libSearch').oninput = renderLibrary;
+$('#v-library')._acts = {
+  libmode: t => { L.mode = t.dataset.m; renderLibrary(); },
+  group: t => openGroup(t.dataset.id),
+  color: t => openColor(t.dataset.id),
+  add: () => openSheet(`<h3 class="st">เพิ่มใหม่</h3><div class="list">
+      <button data-act="ng">${ic('folder', 22)}<span class="grow">สร้างกลุ่มสีใหม่</span></button>
+      <button data-act="nh">${ic('hash', 22)}<span class="grow">เพิ่มสีด้วยโค้ด HEX</span></button>
+      <button data-act="nm">${ic('scan', 22)}<span class="grow">วัดสีจากวัสดุจริง</span></button></div>`, () => ({
+    ng: async () => { const n = await ask('ชื่อกลุ่มใหม่', '', { ph: 'เช่น บ้านคุณเอ · ห้องนั่งเล่น', ok: 'สร้างกลุ่ม' }); if (n) { const g = addGroup(n); openGroup(g.id); } },
+    nh: () => addHexFlow(null),
+    nm: () => { closeSheet(); go('measure'); },
+  })),
+};
+async function addHexFlow(gid) {
+  const v = await ask('เพิ่มสีด้วยโค้ด HEX', '#', { ph: '#C5A483', mono: true, ok: 'เพิ่มสี' });
+  if (v === null) return; const hex = normHex(v); if (!hex) return toast('โค้ดสีไม่ถูกต้อง ใช้รูปแบบ #RRGGBB');
+  const c = addColor(hex, { source: 'manual', groupId: gid ?? null }); refreshAll(); openColor(c.id);
+}
 
-function colorDetail(id) {
-  const c = S.colors.find(x => x.id === id); if (!c) return;
-  const i = info(c.hex);
-  const harm = (offs, ls) => offs.map((o, k) => toHex(...hslToRgb((i.h + o + 360) % 360, i.s, ls ? ls[k] : i.l)));
-  const H = {
-    'คู่ตรงข้าม': harm([0, 180]), 'ใกล้เคียง': harm([-30, 0, 30]), 'สามเส้า': harm([0, 120, 240]),
-    'ไล่น้ำหนัก': [15, 30, 45, 60, 75, 90].map(l => toHex(...hslToRgb(i.h, i.s, l)))
-  };
-  const src = { camera: 'วัดจากวัสดุจริง', image: 'ดึงจากภาพ', community: 'นำเข้าจากชุมชน' }[c.source] || '';
-  openSheet(`
-    <div style="height:130px;border-radius:18px;background:${c.hex};display:flex;align-items:flex-end;padding:12px;color:${isLight(c.hex) ? '#111' : '#fff'}">
-      <div><div class="mono" style="font-size:24px">${c.hex}</div><div class="tiny">${esc(src)} · ${new Date(c.t).toLocaleDateString('th-TH')}</div></div></div>
-    <label class="l">ชื่อสี</label><input class="f" id="dName" value="${esc(c.name)}">
-    <label class="l">กลุ่ม</label><select class="f" id="dGroup">${groupOptions(c.groupId)}</select>
-    <div style="margin-top:8px">
-      ${[['HEX', c.hex], ['RGB', `rgb(${i.rgb})`], ['HSL', `hsl(${i.hsl.replace('°', '')})`], ['CMYK', i.cmyk], ['LAB', i.lab]].map(([k, v]) => `<div class="copyrow"><span>${k}</span><button data-copy="${esc(v)}">${esc(v)}</button></div>`).join('')}
-    </div>
-    ${Object.entries(H).map(([k, arr]) => `<label class="l">${k}</label><div class="strip" style="height:40px">${arr.map(h => `<button data-copy="${h}" style="background:${h}" title="${h}"></button>`).join('')}</div>`).join('')}
-    <div class="row" style="margin-top:16px"><button class="btn danger" id="dDel">ลบ</button><button class="btn grow" id="dShare">แชร์สีนี้</button><button class="btn pri grow" id="dOk">บันทึก</button></div>`, b => {
-    b.querySelectorAll('[data-copy]').forEach(x => x.onclick = () => copy(x.dataset.copy));
-    b.querySelector('#dOk').onclick = () => { c.name = b.querySelector('#dName').value.trim() || c.name; c.groupId = resolveGroup(b.querySelector('#dGroup').value); save(); closeSheet(); renderLibrary(); };
-    b.querySelector('#dDel').onclick = () => { if (confirm('ลบสีนี้ออกจากคลัง?')) { S.colors = S.colors.filter(x => x !== c); save(); closeSheet(); renderLibrary(); } };
-    b.querySelector('#dShare').onclick = () => sharePalette(c.name, [c.hex]);
+/* =========================================================
+   Color page
+   ========================================================= */
+function openColor(id) {
+  const st = { tool: 'match', all: false, moreMatch: false };
+  pushPage((el, p) => {
+    const c = getColor(id);
+    if (!c) { el.innerHTML = `<div class="in"><div class="ptop"><button class="nb" data-act="back">${ic('back', 24)}</button></div><div class="empty">สีนี้ถูกลบแล้ว</div></div>`; el._acts = { back: () => popPage() }; return; }
+    const I = info(c.hex), fg = textOn(c.hex), g = getGroup(c.groupId);
+    const vrow = (k, v, sub, key) => `<div class="vrow ${key ? 'key' : ''}"><div class="k">${k}${sub ? `<small>${sub}</small>` : ''}</div><div class="v">${esc(v)}</div><button class="cpy" data-copy="${esc(v)}" data-label="${k}" aria-label="คัดลอก ${k}">${ic('copy', 20)}</button></div>`;
+    el.innerHTML = `<div class="in">
+      <div class="ptop"><button class="nb" data-act="back" aria-label="กลับ">${ic('back', 24)}</button><button class="nb" data-act="menu" aria-label="ตัวเลือก">${ic('more', 24)}</button></div>
+      <div class="pbody">
+        <div class="hero" style="background:${c.hex};color:${fg}">
+          <div class="row sb"><span class="no">Color #${c.no}</span><button class="nb" style="color:inherit;margin:-10px -10px 0 0" data-act="full" aria-label="เต็มจอ">${ic('expand', 22)}</button></div>
+          <div><div class="hx">${c.hex}</div><button class="nm" data-act="rename">${esc(c.name)} ${ic('edit', 15)}</button></div>
+        </div>
+        <div class="cap">บันทึก ${ago(c.t)} · ${SRC[c.source] || 'บันทึกไว้'}${c.example ? ' · สีตัวอย่าง' : ''}${g ? ` · ${esc(g.name)}` : ''}</div>
+        <div class="card flush">
+          ${vrow('HEX', c.hex, '', true)}${vrow('RGB', I.sRgb)}${vrow('Lab', I.sLab, 'D50')}
+          ${st.all ? vrow('LCh', I.sLch, 'D50') + vrow('CMYK', I.sCmyk, '≈ ประมาณ') + vrow('HSL', I.sHsl) + vrow('HSB', I.sHsb) + vrow('Lab', I.sLab65, 'D65') : ''}
+          <div class="vfoot"><button class="infob" data-act="valInfo" aria-label="อธิบายค่าสี">i</button><button class="more" data-act="all">${st.all ? 'ย่อ' : 'All values'} <span style="display:inline-block;transform:rotate(${st.all ? 180 : 0}deg)">${ic('chev', 15)}</span></button></div>
+        </div>
+        <div class="tools5">${[['match', 'Match'], ['harmony', 'Harmony'], ['digital', 'Digital'], ['print', 'Print'], ['brand', 'Brand']].map(([k, n]) => `<button class="tool ${st.tool === k ? 'on' : ''}" data-act="tool" data-k="${k}">${ic(k, 22)}${n}</button>`).join('')}</div>
+        <div class="card">${toolBody(c, st)}</div>
+      </div>
+      <div class="pfoot">
+        <button class="ibtn big" data-act="pin" aria-label="ปักหมุด">${ic(c.pin ? 'bookmarkF' : 'bookmark', 22)}</button>
+        <button class="ibtn big" data-act="export" aria-label="ส่งออกและแชร์">${ic('share', 22)}</button>
+        <button class="btn pri" data-act="move">ย้ายกลุ่ม</button>
+      </div></div>`;
+    el._acts = {
+      back: () => popPage(),
+      tool: t => { st.tool = t.dataset.k; p.render(); },
+      all: () => { st.all = !st.all; p.render(); },
+      moreMatch: () => { st.moreMatch = !st.moreMatch; p.render(); },
+      pin: () => { c.pin = !c.pin; save(); p.render(); toast(c.pin ? 'ปักหมุดแล้ว' : 'เลิกปักหมุดแล้ว'); },
+      export: () => openExport({ title: c.name, colors: [c] }),
+      move: async () => { const gid = await chooseGroup(c.groupId); if (gid === undefined) return; c.groupId = gid; touchGroup(gid); save(); refreshAll(); toast(gid ? `ย้ายไป “${getGroup(gid).name}” แล้ว` : 'นำออกจากกลุ่มแล้ว'); if (gid) S.lastGroup = gid; save(); },
+      rename: async () => { const n = await ask('ชื่อสี', c.name, { ok: 'บันทึก' }); if (n) { c.name = n; save(); refreshAll(); } },
+      full: () => { const d = document.createElement('div'); d.className = 'full'; d.style.cssText = `background:${c.hex};color:${fg}`; d.innerHTML = `<div>${c.hex}<div style="font-size:17px;margin-top:6px">${esc(c.name)} · แตะเพื่อปิด</div></div>`; d.onclick = () => d.remove(); document.body.appendChild(d); },
+      menu: () => openSheet(`<h3 class="st">${esc(c.name)}</h3><div class="list">
+          <button data-act="rn">${ic('edit', 22)}<span class="grow">เปลี่ยนชื่อสี</span></button>
+          <button data-act="dup">${ic('copy', 22)}<span class="grow">ทำสำเนา</span></button>
+          <button data-act="del" class="danger">${ic('trash', 22)}<span class="grow">ลบสีนี้</span></button></div>`, () => ({
+        rn: () => el._acts.rename(),
+        dup: () => { closeSheet(); const d = addColor(c.hex, { name: c.name + ' (สำเนา)', groupId: c.groupId, source: c.source }); refreshAll(); toast('ทำสำเนาแล้ว', 'เปิด', () => openColor(d.id)); },
+        del: async () => { if (await confirmBox('ลบสี ' + c.hex + '?', 'สีนี้จะถูกลบออกจากคลังและกลุ่ม กู้คืนไม่ได้', 'ลบสี')) { S.colors = S.colors.filter(x => x !== c); save(); popPage(); toast('ลบสีแล้ว'); } },
+      })),
+      valInfo: () => openSheet(`<h3 class="st">ค่าสีแต่ละแบบใช้ทำอะไร</h3><div class="tips" style="margin-top:8px">
+        <div><b>HEX</b><span>รหัสสีสำหรับเว็บ แอป Figma Canva</span></div>
+        <div><b>RGB</b><span>ค่าแสงแดง เขียว น้ำเงิน (sRGB) สำหรับงานจอ</span></div>
+        <div><b>Lab</b><span>ค่าสีตามการมองเห็นของมนุษย์ (CIE Lab, แสงอ้างอิง D50) ใช้เทียบสีกับโรงพิมพ์และวัดความต่างสี ΔE</span></div>
+        <div><b>CMYK</b><span>ค่าประมาณสำหรับงานพิมพ์ แปลงจาก sRGB แบบทั่วไป ควรขอปรู๊ฟสีจริง</span></div></div>`),
+      ...toolActs(c, st, p),
+    };
   });
 }
+function toolBody(c, st) {
+  const hex = c.hex;
+  if (st.tool === 'match') {
+    const ms = closest(hex, st.moreMatch ? 9 : 3);
+    const mine = S.colors.filter(x => x.id !== c.id).map(x => ({ ...x, d: dE(hex, x.hex) })).filter(x => x.d < 10).sort((a, b) => a.d - b.d).slice(0, 4);
+    return `<div class="shead"><h3>Closest matches <button class="infob" data-act="matchInfo">i</button></h3><button class="more" data-act="moreMatch">${st.moreMatch ? 'Less' : 'More'} ${ic('chev', 15)}</button></div>
+      <div class="mt3">${ms.map(m => `<button data-act="ref" data-hex="${m.h}" data-name="${esc(m.n)}"><div class="sw" style="background:${m.h}"></div><b>${m.h}</b><span>${esc(m.n)}</span><small>ΔE ${r1(m.d)} · ${verdict(m.d)}</small></button>`).join('')}</div>
+      ${mine.length ? `<div class="shead" style="margin:18px 0 4px"><h3>ใกล้เคียงในคลังของคุณ</h3></div>${mine.map(x => `<button class="crow" data-act="openc" data-id="${x.id}"><div class="sw" style="background:${x.hex}"></div><div><b>${x.hex}</b><span>${esc(x.name)}</span></div><span class="pct">ΔE ${r1(x.d)}</span></button>`).join('')}` : ''}`;
+  }
+  if (st.tool === 'harmony') {
+    const sets = [['คู่ตรงข้าม', [0, 180]], ['ใกล้เคียง', [-30, 0, 30]], ['สามเส้า', [0, 120, 240]], ['แยกคู่ตรงข้าม', [0, 150, 210]], ['สี่เหลี่ยม', [0, 90, 180, 270]]]
+      .map(([n, a]) => [n, a.map(d => d ? lchShift(hex, d) : hex)]);
+    const L0 = labOf(hex)[0];
+    sets.push(['ไล่น้ำหนัก', [92, 80, 68, 56, 44, 32, 20].map(l => Math.abs(l - L0) < 6 ? hex : lchShift(hex, 0, l, Math.min(1, .35 + (1 - Math.abs(l - 55) / 60))))]);
+    return `<div class="shead"><h3>ชุดสีที่เข้ากัน</h3><span class="sub tiny">คำนวณบน LCh · แตะสีเพื่อดู</span></div>
+      ${sets.map(([n, hs], i) => `<div class="hrow"><div class="row sb"><span style="font-size:14px;font-weight:500">${n}</span><button class="more" data-act="saveSet" data-i="${i}">${ic('plus', 15)} บันทึกเป็นกลุ่ม</button></div><div class="strip">${stripHtml(hs, 'button', 'ref')}</div></div>`).join('')}`;
+  }
+  if (st.tool === 'digital') {
+    const cw = contrast(hex, '#FFFFFF'), cb = contrast(hex, '#000000');
+    const badges = r => [['AA', 4.5], ['AAA', 7], ['ตัวใหญ่', 3]].map(([n, t]) => `<span class="pill ${r >= t ? '' : 'x'}">${n}</span>`).join('');
+    const [r, g, b] = rgbOf(hex), h6 = hex.slice(1), f3 = v => (v / 255).toFixed(3);
+    const codes = [['CSS', `color: ${hex};`], ['RGB', `rgb(${r} ${g} ${b})`], ['Tailwind', `bg-[${hex}]`], ['SwiftUI', `Color(red: ${f3(r)}, green: ${f3(g)}, blue: ${f3(b)})`], ['Android', `#FF${h6}`], ['Flutter', `Color(0xFF${h6})`]];
+    return `<div class="shead"><h3>ความชัดของตัวอักษร</h3><span class="sub tiny">WCAG 2.2</span></div>
+      <div class="pv"><div style="background:${hex};color:#fff"><span class="aa">Aa ก</span><div><div style="font-size:13px">ตัวขาว · ${r1(cw)}:1</div><div class="pills">${badges(cw)}</div></div></div>
+      <div style="background:${hex};color:#000"><span class="aa">Aa ก</span><div><div style="font-size:13px">ตัวดำ · ${r1(cb)}:1</div><div class="pills">${badges(cb)}</div></div></div></div>
+      <div class="shead" style="margin:18px 0 4px"><h3>โค้ดสำหรับนักพัฒนา</h3></div>
+      ${codes.map(([k, v]) => `<div class="coderow"><span>${k}</span><code>${esc(v)}</code><button class="cpy" data-copy="${esc(v)}" data-label="${k}">${ic('copy', 19)}</button></div>`).join('')}`;
+  }
+  if (st.tool === 'print') {
+    const I = info(hex), names = ['C', 'M', 'Y', 'K'], cols = ['#00A0DC', '#E2007A', '#FFE500', '#262624'], tac = I.cmyk.reduce((a, b) => a + b, 0);
+    const gray = simulate(hex, 'gray');
+    return `<div class="shead"><h3>CMYK ≈</h3><button class="more" data-copy="${I.sCmyk}" data-label="CMYK">${ic('copy', 16)} คัดลอก</button></div>
+      <div class="inkbars">${I.cmyk.map((v, i) => `<div><div class="bar"><i style="height:${v}%;background:${cols[i]}"></i></div><span>${names[i]}</span><b>${v}%</b></div>`).join('')}</div>
+      <div class="coderow mt8"><span>หมึกรวม</span><code>${tac}%${tac > 300 ? ' · สูงเกินงานพิมพ์ทั่วไป' : ''}</code><span></span></div>
+      <div class="coderow"><span>Lab D50</span><code>${I.sLab}</code><button class="cpy" data-copy="${I.sLab}" data-label="Lab">${ic('copy', 19)}</button></div>
+      <div class="coderow"><span>พิมพ์ขาวดำ</span><code style="display:flex;align-items:center;gap:8px"><i style="width:22px;height:22px;border-radius:6px;background:${gray};display:inline-block"></i>${gray}</code><span></span></div>
+      <p class="sub tiny" style="margin:12px 0 0">CMYK แปลงจาก sRGB แบบทั่วไป ยังไม่ผ่านโปรไฟล์ ICC ของโรงพิมพ์ · ส่งค่า Lab D50 ให้โรงพิมพ์เทียบจะแม่นกว่า และควรขอปรู๊ฟสีก่อนพิมพ์จริง</p>`;
+  }
+  // brand
+  const sc = brandScale(hex);
+  return `<div class="shead"><h3>สเกลสีแบรนด์</h3><span class="sub tiny">50 – 950</span></div>
+    <div class="scale">${sc.map(s => `<button data-act="ref" data-hex="${s.hex}" class="${s.base ? 'base' : ''}" style="background:${s.hex};color:${textOn(s.hex)}">${s.k}</button>`).join('')}</div>
+    <p class="sub tiny" style="margin:8px 0 14px">กรอบคือสีต้นฉบับ · ใช้เป็นโทเคนสีของแบรนด์ทั้งระบบ</p>
+    <div class="row"><button class="btn soft grow" data-act="scaleCss">${ic('code', 18)}คัดลอก CSS</button><button class="btn soft grow" data-act="scaleTw">${ic('copy', 18)}Tailwind</button></div>
+    <button class="btn soft mt8" style="width:100%" data-act="scaleSave">${ic('plus', 18)}บันทึกสเกลเป็นกลุ่มสี</button>`;
+}
+function brandScale(hex) {
+  const keys = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950], Ls = [97, 93, 86, 77, 67, 57, 47, 38, 29, 21, 14];
+  const L0 = labOf(hex)[0]; let bi = 0; Ls.forEach((l, i) => { if (Math.abs(l - L0) < Math.abs(Ls[bi] - L0)) bi = i; });
+  return keys.map((k, i) => ({ k, base: i === bi, hex: i === bi ? hex : lchShift(hex, 0, Ls[i], Math.min(1, .3 + (1 - Math.abs(Ls[i] - 55) / 55))) }));
+}
+function toolActs(c, st, p) {
+  const slugName = slug(c.name, c.no);
+  return {
+    ref: t => refColorSheet(t.dataset.hex, t.dataset.name),
+    openc: t => openColor(t.dataset.id),
+    matchInfo: () => openSheet(`<h3 class="st">ΔE คืออะไร</h3><p class="sub" style="margin:0 0 12px">ΔE2000 คือค่าความต่างของสีตามการมองเห็น ยิ่งน้อยยิ่งเหมือน เทียบกับคลังชื่อสีอ้างอิงในแอป</p>
+      <div class="tips"><div><b>&lt;1</b><span>เหมือนกัน ตาแยกไม่ได้</span></div><div><b>1–2</b><span>แทบแยกไม่ออก ต้องสังเกตใกล้ๆ</span></div><div><b>2–5</b><span>ใกล้เคียง เห็นต่างเมื่อวางคู่กัน</span></div><div><b>&gt;5</b><span>ต่างกันชัด</span></div></div>`),
+    saveSet: t => {
+      const strip = $$('.hrow')[+t.dataset.i]; const hs = $$('[data-hex]', strip).map(b => b.dataset.hex);
+      const name = `${c.name} · ${$('span', strip).textContent}`;
+      const g = addGroup(name); hs.forEach((h, i) => addColor(h, { groupId: g.id, source: h === c.hex ? c.source : 'harmony', name: h === c.hex ? c.name : undefined }));
+      refreshAll(); toast(`บันทึก “${name}” ${hs.length} สีแล้ว`, 'เปิด', () => openGroup(g.id));
+    },
+    scaleCss: () => copy(`:root {\n${brandScale(c.hex).map(s => `  --${slugName}-${s.k}: ${s.hex};`).join('\n')}\n}`, 'CSS สเกลสี'),
+    scaleTw: () => copy(`'${slugName}': {\n${brandScale(c.hex).map(s => `  ${s.k}: '${s.hex}',`).join('\n')}\n},`, 'Tailwind สเกลสี'),
+    scaleSave: () => { const g = addGroup(c.name + ' · สเกลแบรนด์'); brandScale(c.hex).forEach(s => addColor(s.hex, { groupId: g.id, name: `${c.name} ${s.k}`, source: s.base ? c.source : 'harmony' })); refreshAll(); toast('บันทึกสเกล 11 สีแล้ว', 'เปิด', () => openGroup(g.id)); },
+  };
+}
+function refColorSheet(hex, name) {
+  name = name || nameOf(hex);
+  const I = info(hex);
+  openSheet(`<div class="sheetsw" style="background:${hex};color:${textOn(hex)}">${hex}</div>
+    <div class="row sb" style="margin:12px 2px 4px"><b style="font-size:16px">${esc(name)}</b><span class="sub">RGB ${I.sRgb}</span></div>
+    <div class="sub" style="margin:0 2px 14px">Lab D50 ${I.sLab} · CMYK≈ ${I.sCmyk}</div>
+    <div class="row"><button class="btn soft grow" data-act="cp">${ic('copy', 18)}คัดลอก HEX</button><button class="btn pri grow" data-act="sv">${ic('bookmark', 18)}เก็บเข้าคลัง</button></div>`,
+    () => ({
+      cp: () => copy(hex),
+      sv: async () => { closeSheet(); const gid = await chooseGroup(S.lastGroup); if (gid === undefined) return; const c = addColor(hex, { name, groupId: gid, source: 'harmony' }); refreshAll(); toast('เก็บ ' + hex + ' แล้ว', 'เปิด', () => openColor(c.id)); },
+    }));
+}
 
-/* ============ 03 IMAGE ============ */
-const ic = $('#imgCanvas'), ictx = ic.getContext('2d', { willReadFrequently: true });
-let imgK = 6, imgPal = [], imgPick = null;
-function loadImage(file) {
+/* =========================================================
+   Palette (group) page
+   ========================================================= */
+function openGroup(gid) {
+  const st = { moreCvd: false };
+  pushPage((el, p) => {
+    const g = getGroup(gid);
+    if (!g) { el.innerHTML = `<div class="in"><div class="ptop"><button class="nb" data-act="back">${ic('back', 24)}</button></div><div class="empty">กลุ่มนี้ถูกลบแล้ว</div></div>`; el._acts = { back: () => popPage() }; return; }
+    const cs = groupColors(gid), hs = cs.map(c => c.hex);
+    el.innerHTML = `<div class="in">
+      <div class="ptop"><button class="nb" data-act="back" aria-label="กลับ">${ic('back', 24)}</button><div class="r"><button class="nb" data-act="edit" aria-label="แก้ไข">${ic('edit', 22)}</button><button class="nb" data-act="menu" aria-label="ตัวเลือก">${ic('more', 24)}</button></div></div>
+      <div class="pbody">
+        <div class="phero" style="${groupArt(g)}">
+          <h2>${esc(g.name)}${g.example ? '<span class="badge">ตัวอย่าง</span>' : ''}</h2>
+          <div class="sub">${cs.length} สี · อัปเดต ${ago(g.t)}</div>
+          ${cs.length ? `<div class="strip">${stripHtml(hs)}</div>` : ''}
+        </div>
+        ${g.desc ? `<p class="desc">${esc(g.desc)}</p>` : `<button class="more" style="align-self:flex-start" data-act="edit">${ic('plus', 15)} เพิ่มคำอธิบายกลุ่ม</button>`}
+        <div><div class="shead" style="margin:6px 2px 10px"><h3>Colors (${cs.length})</h3><button class="more" data-act="addc">${ic('plus', 15)} เพิ่มสี</button></div>
+        <div class="card flush">${cs.length ? cs.map(c => `<div class="crow"><button data-act="openc" data-id="${c.id}" style="display:contents"><div class="sw" style="background:${c.hex}"></div><div style="text-align:left;min-width:0"><b>${c.hex}</b><span>${esc(c.name)}</span></div></button><button class="cpy" data-copy="${c.hex}" aria-label="คัดลอก ${c.hex}">${ic('copy', 20)}</button></div>`).join('')
+          : `<div class="empty">ยังไม่มีสีในกลุ่มนี้<br>วัดสีใหม่ แล้วกด “ย้ายกลุ่ม” หรือเพิ่มด้วยโค้ด HEX</div>`}</div></div>
+        ${cs.length > 1 ? paletteCheck(hs, st) : ''}
+      </div>
+      <div class="pfoot">
+        <button class="ibtn big" data-act="community" aria-label="แชร์เข้าชุมชน">${ic('users', 22)}</button>
+        <button class="btn pri" data-act="export" ${cs.length ? '' : 'disabled'}>ส่งออก &amp; แชร์</button>
+      </div></div>`;
+    el._acts = {
+      back: () => popPage(),
+      openc: t => openColor(t.dataset.id),
+      export: () => openExport({ title: g.name, colors: cs, group: g }),
+      community: () => shareToCommunity(g),
+      cvdMore: () => { st.moreCvd = !st.moreCvd; p.render(); },
+      checkInfo: () => openSheet(`<h3 class="st">Palette check</h3><div class="tips" style="margin-top:8px">
+        <div><b>${ic('warn', 16)}</b><span>คู่สีที่ ΔE2000 ต่ำกว่า 8 คนทั่วไปจะแยกยากเมื่อใช้คู่กันในกราฟหรือป้าย</span></div>
+        <div><b>Aa</b><span>คู่สีที่ใช้เป็นตัวอักษรบนพื้นได้ (คอนทราสต์ ≥ 4.5:1 ตาม WCAG AA)</span></div>
+        <div><b>CVD</b><span>จำลองการมองเห็นของผู้มีภาวะตาบอดสี Deutan (เขียว) Protan (แดง) Tritan (น้ำเงิน) ประมาณ 8% ของผู้ชาย</span></div></div>`),
+      addc: () => openSheet(`<h3 class="st">เพิ่มสีเข้า “${esc(g.name)}”</h3><div class="list">
+          <button data-act="m">${ic('scan', 22)}<span class="grow">วัดสีจากวัสดุจริง</span></button>
+          <button data-act="h">${ic('hash', 22)}<span class="grow">ป้อนโค้ด HEX</span></button>
+          <button data-act="i">${ic('image', 22)}<span class="grow">ดึงสีจากภาพ</span></button></div>`, () => ({
+        m: () => { closeSheet(); S.lastGroup = g.id; save(); while (pages.length) popPage(); go('measure'); toast(`สีที่วัดจะเข้ากลุ่ม “${g.name}”`); },
+        h: () => addHexFlow(g.id),
+        i: () => { closeSheet(); while (pages.length) popPage(); go('image'); },
+      })),
+      edit: () => openSheet(`<h3 class="st">แก้ไขกลุ่มสี</h3>
+          <label class="sub" for="gName">ชื่อกลุ่ม</label><input class="f mt8" id="gName" value="${esc(g.name)}" autocomplete="off">
+          <label class="sub" for="gDesc" style="display:block;margin-top:12px">คำอธิบาย</label><textarea class="f mt8" id="gDesc" placeholder="อารมณ์ของโทนสี วัสดุ หรือโปรเจกต์ที่ใช้">${esc(g.desc)}</textarea>
+          <div class="row" style="margin-top:14px"><button class="btn soft grow" data-act="no">ยกเลิก</button><button class="btn pri grow" data-act="ok">บันทึก</button></div>`,
+        b => ({ no: closeSheet, ok: () => { g.name = $('#gName', b).value.trim() || g.name; g.desc = $('#gDesc', b).value.trim(); g.example = false; touchGroup(g.id); save(); closeSheet(); refreshAll(); } })),
+      menu: () => openSheet(`<h3 class="st">${esc(g.name)}</h3><div class="list">
+          <button data-act="lg">${ic('scan', 22)}<span class="grow">ตั้งเป็นกลุ่มปลายทางเมื่อวัดสี${S.lastGroup === g.id ? ' ✓' : ''}</span></button>
+          ${g.thumb ? `<button data-act="rt">${ic('image', 22)}<span class="grow">ลบภาพปกกลุ่ม</span></button>` : ''}
+          <button data-act="del" class="danger">${ic('trash', 22)}<span class="grow">ลบกลุ่ม</span></button></div>`, () => ({
+        lg: () => { S.lastGroup = S.lastGroup === g.id ? null : g.id; save(); closeSheet(); toast(S.lastGroup ? `สีที่วัดจะเข้ากลุ่ม “${g.name}”` : 'สีที่วัดจะไม่เข้ากลุ่มใด'); },
+        rt: () => { delete g.thumb; save(); closeSheet(); refreshAll(); },
+        del: async () => {
+          if (!(await confirmBox(`ลบกลุ่ม “${g.name}”?`, `สี ${cs.length} สีในกลุ่มจะยังอยู่ในคลัง (ไม่มีกลุ่ม)`, 'ลบกลุ่ม'))) return;
+          S.colors.forEach(c => { if (c.groupId === g.id) c.groupId = null; }); S.groups = S.groups.filter(x => x !== g); if (S.lastGroup === g.id) S.lastGroup = null; save(); popPage(); toast('ลบกลุ่มแล้ว');
+        },
+      })),
+    };
+  });
+}
+function paletteCheck(hs, st) {
+  const pairs = []; for (let i = 0; i < hs.length; i++) for (let j = i + 1; j < hs.length; j++) pairs.push([hs[i], hs[j]]);
+  const hard = pairs.filter(([a, b]) => dE(a, b) < 8).length;
+  const hardD = pairs.filter(([a, b]) => dE(simulate(a, 'deutan'), simulate(b, 'deutan')) < 8).length;
+  const read = pairs.filter(([a, b]) => contrast(a, b) >= 4.5).length;
+  const rows = [['Normal', hs]].concat([['Deutan', 'deutan']].concat(st.moreCvd ? [['Protan', 'protan'], ['Tritan', 'tritan'], ['ขาวดำ', 'gray']] : []).map(([n, t]) => [n, hs.map(h => simulate(h, t))]));
+  return `<div class="card"><div class="shead"><h3>Palette check <button class="infob" data-act="checkInfo">i</button></h3><button class="more" data-act="cvdMore">${st.moreCvd ? 'Less' : 'More'} ${ic('chev', 15)}</button></div>
+    <div class="chk">${hard ? `<span class="warn">${ic('warn', 15)}แยกยาก ${hard} คู่</span>` : `<span class="ok">${ic('check', 16)} แยกกันชัดทุกคู่</span>`}<span>Aa อ่านออก ${read}/${pairs.length} คู่</span>${hardD > hard ? `<span class="warn">Deutan แยกยาก ${hardD} คู่</span>` : ''}</div>
+    ${rows.map(([n, a]) => `<div class="cvd"><label>${n}</label><div class="strip">${stripHtml(a)}</div></div>`).join('')}</div>`;
+}
+
+/* =========================================================
+   03 · ดึงสีจากภาพ
+   ========================================================= */
+function renderImageTab() {
+  const gs = S.groups.filter(g => g.thumb).slice(0, 6);
+  $('#imgRecent').innerHTML = gs.length ? `<div class="shead mt" style="margin-top:22px"><h3>ชุดสีจากภาพล่าสุด</h3></div><div class="pgrid">${gs.map(g => { const cs = groupColors(g.id); return `<button class="pcard" data-act="group" data-id="${g.id}"><div class="art" style="${groupArt(g)}"></div><div class="bd"><b>${esc(g.name)}</b><div class="strip">${stripHtml(cs.map(c => c.hex))}</div></div></button>`; }).join('')}</div>` : '';
+}
+$('#v-image')._acts = { group: t => openGroup(t.dataset.id) };
+['#imgCam', '#imgFile'].forEach(s => $(s).onchange = e => { const f = e.target.files[0]; if (f) openImage(f); e.target.value = ''; });
+const drop = $('#drop');
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); const f = [...e.dataTransfer.files].find(f => f.type.startsWith('image/')); if (f) openImage(f); });
+document.addEventListener('paste', e => { if (tab !== 'image' || pages.length) return; const f = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith('image/')); if (f) openImage(f); });
+
+function openImage(file) {
   const img = new Image();
   img.onload = () => {
-    const m = 1400, s = Math.min(1, m / Math.max(img.width, img.height));
-    ic.width = Math.round(img.width * s); ic.height = Math.round(img.height * s);
-    ictx.drawImage(img, 0, 0, ic.width, ic.height); URL.revokeObjectURL(img.src);
-    ic.hidden = false; $('#imgEmpty').hidden = true; $('#imgResult').hidden = false; $('#imgDot').style.display = 'none'; $('#imgPicked').hidden = true;
-    extract();
+    const m = 1600, s = Math.min(1, m / Math.max(img.width, img.height));
+    const cv = document.createElement('canvas'); cv.width = Math.round(img.width * s); cv.height = Math.round(img.height * s);
+    cv.getContext('2d', { willReadFrequently: true }).drawImage(img, 0, 0, cv.width, cv.height); URL.revokeObjectURL(img.src);
+    if (tab === 'measure') stopCam();
+    const st = { cv, crop: null, k: 5, pal: null, picked: null };
+    pushPage((el, p) => imagePage(el, p, st));
   };
-  img.onerror = () => toast('เปิดรูปนี้ไม่ได้');
+  img.onerror = () => toast('เปิดไฟล์ภาพนี้ไม่ได้ ลองไฟล์ JPG หรือ PNG');
   img.src = URL.createObjectURL(file);
 }
-function extract() {
-  const d = ictx.getImageData(0, 0, ic.width, ic.height).data, px = [];
-  const step = Math.max(1, Math.floor(Math.sqrt(ic.width * ic.height / 9000)));
-  for (let y = 0; y < ic.height; y += step) for (let x = 0; x < ic.width; x += step) {
-    const i = (y * ic.width + x) * 4; if (d[i + 3] < 128) continue; px.push([d[i], d[i + 1], d[i + 2]]);
-  }
-  imgPal = kmeans(px, imgK);
-  $('#imgPal').style.gridTemplateColumns = `repeat(${imgK},1fr)`;
-  $('#imgPal').innerHTML = imgPal.map(h => `<button style="background:${h};color:${isLight(h) ? '#111' : '#fff'}" data-h="${h}"><span>${h.slice(1)}</span></button>`).join('');
-  $$('#imgPal button').forEach(b => b.onclick = () => saveSheet(b.dataset.h, 'image'));
+function extract(st) {
+  const { cv } = st, ctx = cv.getContext('2d', { willReadFrequently: true });
+  const [x0, y0, x1, y1] = st.crop || [0, 0, 1, 1];
+  const X = Math.floor(x0 * cv.width), Y = Math.floor(y0 * cv.height), W = Math.max(1, Math.floor((x1 - x0) * cv.width)), H = Math.max(1, Math.floor((y1 - y0) * cv.height));
+  const d = ctx.getImageData(X, Y, W, H).data, px = [], step = Math.max(1, Math.floor(Math.sqrt(W * H / 12000)));
+  for (let y = 0; y < H; y += step) for (let x = 0; x < W; x += step) { const i = (y * W + x) * 4; if (d[i + 3] > 128) px.push([d[i], d[i + 1], d[i + 2]]); }
+  st.pal = kmeans(px, st.k);
 }
 function kmeans(px, k) {
   if (!px.length) return [];
   const dist = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
   const C = [px[Math.floor(px.length / 2)].slice()];
-  while (C.length < k) { // k-means++ (deterministic: farthest-weighted pick)
-    let best = 0, bi = 0;
-    for (let i = 0; i < px.length; i += 3) { const m = Math.min(...C.map(c => dist(px[i], c))); if (m > best) { best = m; bi = i; } }
-    C.push(px[bi].slice());
+  while (C.length < k + 2) { let best = -1, bi = 0; for (let i = 0; i < px.length; i += 2) { let m = Infinity; for (const c of C) { const dd = dist(px[i], c); if (dd < m) m = dd; } if (m > best) { best = m; bi = i; } } if (best <= 0) break; C.push(px[bi].slice()); }
+  let cnt = [];
+  for (let it = 0; it < 14; it++) {
+    const sum = C.map(() => [0, 0, 0]); cnt = C.map(() => 0);
+    for (const p of px) { let bi = 0, bd = Infinity; for (let j = 0; j < C.length; j++) { const dd = dist(p, C[j]); if (dd < bd) { bd = dd; bi = j; } } const s = sum[bi]; s[0] += p[0]; s[1] += p[1]; s[2] += p[2]; cnt[bi]++; }
+    C.forEach((c, j) => { if (cnt[j]) C[j] = sum[j].map(v => v / cnt[j]); });
   }
-  let cnt = new Array(k).fill(0);
-  for (let it = 0; it < 12; it++) {
-    const sum = C.map(() => [0, 0, 0]); cnt = new Array(k).fill(0);
-    for (const p of px) { let bi = 0, bd = 1e12; for (let j = 0; j < k; j++) { const dd = dist(p, C[j]); if (dd < bd) { bd = dd; bi = j; } }
-      sum[bi][0] += p[0]; sum[bi][1] += p[1]; sum[bi][2] += p[2]; cnt[bi]++; }
-    for (let j = 0; j < k; j++) if (cnt[j]) C[j] = sum[j].map(v => v / cnt[j]);
-  }
-  return C.map((c, j) => ({ h: toHex(...c), n: cnt[j] })).filter(x => x.n).sort((a, b) => b.n - a.n).map(x => x.h);
+  let out = C.map((c, j) => ({ hex: toHex(...c), n: cnt[j] })).filter(x => x.n).sort((a, b) => b.n - a.n);
+  const merged = [];
+  for (const o of out) { const m = merged.find(x => dE(x.hex, o.hex) < 5); if (m) m.n += o.n; else merged.push({ ...o }); }
+  merged.sort((a, b) => b.n - a.n);
+  const top = merged.slice(0, k), tot = top.reduce((a, b) => a + b.n, 0);
+  return top.map(x => ({ ...x, pct: Math.round(x.n / tot * 100) }));
 }
-ic.addEventListener('pointerdown', e => {
-  const rc = ic.getBoundingClientRect();
-  const x = Math.round((e.clientX - rc.left) * ic.width / rc.width), y = Math.round((e.clientY - rc.top) * ic.height / rc.height);
-  const R = 3, x0 = clamp(x - R, 0, ic.width - 1), y0 = clamp(y - R, 0, ic.height - 1);
-  const w = Math.min(R * 2 + 1, ic.width - x0), h = Math.min(R * 2 + 1, ic.height - y0);
-  const d = ictx.getImageData(x0, y0, w, h).data; let r = 0, g = 0, b = 0, n = 0;
-  for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
-  imgPick = toHex(r / n, g / n, b / n);
-  const dot = $('#imgDot'); dot.style.display = 'block'; dot.style.left = (e.clientX - rc.left) + 'px'; dot.style.top = (e.clientY - rc.top) + 'px'; dot.style.background = imgPick;
-  $('#imgPicked').hidden = false; $('#imgPickSw').style.background = imgPick; $('#imgPickHex').textContent = imgPick; $('#imgPickName').textContent = nameOf(imgPick);
-});
-$('#btnImgPickSave').onclick = () => imgPick && saveSheet(imgPick, 'image');
-['#imgCam', '#imgFile'].forEach(s => $(s).onchange = e => { const f = e.target.files[0]; if (f) loadImage(f); e.target.value = ''; });
-$$('#segK button').forEach(b => b.onclick = () => { $$('#segK button').forEach(x => x.classList.toggle('on', x === b)); imgK = +b.dataset.k; if (!ic.hidden) extract(); });
-$('#btnSavePal').onclick = () => {
-  if (!imgPal.length) return;
-  const n = prompt('ตั้งชื่อกลุ่มสีจากภาพนี้', 'ชุดสีจากภาพ ' + new Date().toLocaleDateString('th-TH')); if (n === null) return;
-  const g = addGroup(n.trim() || 'ชุดสีจากภาพ');
-  [...imgPal].reverse().forEach(h => addColor(h, null, g.id, 'image'));
-  toast('บันทึก ' + imgPal.length + ' สีลงกลุ่ม “' + g.name + '”');
-};
+function imagePage(el, p, st) {
+  if (!st.pal) extract(st);
+  el.innerHTML = `<div class="in">
+    <div class="ptop"><button class="nb" data-act="back" aria-label="กลับ">${ic('back', 24)}</button><button class="nb" data-act="reset" aria-label="ใช้ทั้งภาพ">${ic('refresh', 22)}</button></div>
+    <h1 class="ptitle">ผลลัพธ์จากภาพ</h1><div class="sub">Extracted Palette</div>
+    <div class="imgwrap" id="iw"><div class="frame" id="ifr" hidden><i></i></div><div class="pickdot" id="ipk" hidden></div></div>
+    <div class="hint">ลากบนภาพเพื่อวาดกรอบใหม่ · แตะเพื่อจิ้มสีจุดเดียว</div>
+    <div id="ipicked"></div>
+    <div class="bigstrip" id="ibs"></div>
+    <div class="shead" style="margin:22px 2px 4px"><h3>Dominant colors (<span id="icnt"></span>)</h3><div class="seg">${[4, 5, 6, 8].map(k => `<button data-act="k" data-k="${k}" class="${st.k === k ? 'on' : ''}">${k}</button>`).join('')}</div></div>
+    <div class="sub tiny" style="text-align:right;margin:0 2px 8px">เรียงตามสัดส่วน</div>
+    <div class="card flush" id="ilist"></div>
+    <div class="pfoot"><label class="ibtn big" tabindex="0" aria-label="เลือกภาพใหม่">${ic('image', 22)}<input type="file" accept="image/*" hidden id="inew"></label><button class="btn pri" data-act="save">บันทึกเป็นกลุ่มสี</button></div></div>`;
+  const iw = $('#iw', el); iw.prepend(st.cv);
+  const frame = $('#ifr', el), dot = $('#ipk', el);
+  const showFrame = r => { if (!r) { frame.hidden = true; return; } frame.hidden = false; Object.assign(frame.style, { left: r[0] * 100 + '%', top: r[1] * 100 + '%', width: (r[2] - r[0]) * 100 + '%', height: (r[3] - r[1]) * 100 + '%' }); };
+  const update = () => {
+    $('#icnt', el).textContent = st.pal.length;
+    $('#ibs', el).innerHTML = st.pal.map(c => `<button data-act="one" data-hex="${c.hex}" style="background:${c.hex}" aria-label="${c.hex}"></button>`).join('');
+    $('#ilist', el).innerHTML = st.pal.map(c => `<div class="crow img"><div class="sw" style="background:${c.hex}"></div><b>${c.hex}</b><span class="pct">${c.pct}%</span><button class="cpy" data-act="one" data-hex="${c.hex}" aria-label="เก็บ ${c.hex}">${ic('bookmark', 20)}</button><button class="cpy" data-copy="${c.hex}" aria-label="คัดลอก ${c.hex}">${ic('copy', 20)}</button></div>`).join('');
+    const pk = st.picked;
+    $('#ipicked', el).innerHTML = pk ? `<div class="card row" style="margin-bottom:14px;padding:12px"><div style="width:52px;height:52px;border-radius:12px;background:${pk}"></div><div class="grow"><b class="disp" style="font-weight:400;font-size:17px">${pk}</b><div class="sub tiny">${nameOf(pk)} · จุดที่แตะ</div></div><button class="cpy" data-copy="${pk}">${ic('copy', 20)}</button><button class="btn pri" data-act="one" data-hex="${pk}" style="min-height:40px">เก็บ</button></div>` : '';
+  };
+  showFrame(st.crop); update();
+  // drag to crop, tap to pick
+  let start = null;
+  const norm = e => { const r = st.cv.getBoundingClientRect(); return [clamp((e.clientX - r.left) / r.width, 0, 1), clamp((e.clientY - r.top) / r.height, 0, 1)]; };
+  iw.onpointerdown = e => { start = norm(e); iw.setPointerCapture(e.pointerId); };
+  iw.onpointermove = e => { if (!start) return; const q = norm(e); if (Math.abs(q[0] - start[0]) + Math.abs(q[1] - start[1]) > .03) showFrame([Math.min(start[0], q[0]), Math.min(start[1], q[1]), Math.max(start[0], q[0]), Math.max(start[1], q[1])]); };
+  iw.onpointerup = e => {
+    if (!start) return; const q = norm(e), s0 = start; start = null;
+    if (Math.abs(q[0] - s0[0]) + Math.abs(q[1] - s0[1]) <= .03) {
+      const ctx = st.cv.getContext('2d', { willReadFrequently: true }), x = Math.round(q[0] * (st.cv.width - 1)), y = Math.round(q[1] * (st.cv.height - 1)), R = 3;
+      const x0 = clamp(x - R, 0, st.cv.width - 1), y0 = clamp(y - R, 0, st.cv.height - 1);
+      const d = ctx.getImageData(x0, y0, Math.min(R * 2 + 1, st.cv.width - x0), Math.min(R * 2 + 1, st.cv.height - y0)).data; let r = 0, g = 0, b = 0, n = 0;
+      for (let i = 0; i < d.length; i += 4) { r += s2l(d[i]); g += s2l(d[i + 1]); b += s2l(d[i + 2]); n++; }
+      st.picked = linToHex([r / n, g / n, b / n]);
+      dot.hidden = false; dot.style.left = q[0] * 100 + '%'; dot.style.top = q[1] * 100 + '%'; dot.style.background = st.picked;
+      showFrame(st.crop); update(); return;
+    }
+    st.crop = [Math.min(s0[0], q[0]), Math.min(s0[1], q[1]), Math.max(s0[0], q[0]), Math.max(s0[1], q[1])];
+    showFrame(st.crop); extract(st); update();
+  };
+  $('#inew', el).onchange = e => { const f = e.target.files[0]; if (f) { popPage(); setTimeout(() => openImage(f), 340); } };
+  el._acts = {
+    back: () => popPage(),
+    reset: () => { st.crop = null; st.picked = null; dot.hidden = true; showFrame(null); extract(st); update(); },
+    k: t => { st.k = +t.dataset.k; $$('.seg button', el).forEach(b => b.classList.toggle('on', b === t)); extract(st); update(); },
+    one: async t => { const gid = await chooseGroup(S.lastGroup); if (gid === undefined) return; const c = addColor(t.dataset.hex, { groupId: gid, source: 'image' }); toast('เก็บ ' + c.hex + ' แล้ว', 'เปิด', () => openColor(c.id)); },
+    save: async () => {
+      const n = await ask('ตั้งชื่อกลุ่มสี', 'ชุดสีจากภาพ ' + new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }), { ok: 'บันทึก' });
+      if (n === null) return;
+      const g = addGroup(n || 'ชุดสีจากภาพ', { thumb: makeThumb(st.cv, st.crop) });
+      st.pal.forEach((c, i) => { const x = addColor(c.hex, { groupId: g.id, source: 'image' }); x.t += i; });
+      save(); popPage(); setTimeout(() => openGroup(g.id), 330); toast(`บันทึก ${st.pal.length} สีลง “${g.name}” แล้ว`);
+    },
+  };
+}
+function makeThumb(cv, crop) {
+  const [x0, y0, x1, y1] = crop || [0, 0, 1, 1];
+  const sx = x0 * cv.width, sy = y0 * cv.height, sw = (x1 - x0) * cv.width, sh = (y1 - y0) * cv.height, w = 420, h = Math.round(w * Math.min(1.2, sh / sw));
+  const t = document.createElement('canvas'); t.width = w; t.height = h;
+  const s = Math.max(w / sw, h / sh), dw = sw * s, dh = sh * s;
+  t.getContext('2d').drawImage(cv, sx, sy, sw, sh, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  return t.toDataURL('image/jpeg', .72);
+}
 
-/* ============ 04 COMMUNITY ============ */
+/* =========================================================
+   04 · ชุมชน
+   ========================================================= */
 const SEED = [
-  { id: 's1', n: 'ผ้าไหมไทย', a: 'ฝ้าย.ทอมือ', c: ['#7A1F3D', '#C9A227', '#2E5E4E', '#E8D8B0', '#4A1A6B'], l: 1284, d: 9 },
-  { id: 's2', n: 'อันดามันตอนบ่าย', a: 'tide.studio', c: ['#0B3C5D', '#1D7EA6', '#30D5C8', '#F4E3C1', '#F28F3B'], l: 962, d: 4 },
-  { id: 's3', n: 'ไม้สักเก่า + ปูนเปลือย', a: 'บ้านไม้ดีไซน์', c: ['#5C3A21', '#9A6B3F', '#C8A27C', '#B8B5AE', '#5E5E5E'], l: 771, d: 6 },
-  { id: 's4', n: 'ตลาดน้ำยามเช้า', a: 'mook.paint', c: ['#F57C00', '#FDD835', '#4C8C2B', '#1E88E5', '#F8F3E6'], l: 540, d: 2 },
-  { id: 's5', n: 'ดินเผาเชียงใหม่', a: 'clay&co', c: ['#B5532E', '#D98E5F', '#EBC9A7', '#6B4B3E', '#2F2A28'], l: 433, d: 1 },
-  { id: 's6', n: 'มินต์พาสเทลคาเฟ่', a: 'ploy.brand', c: ['#A8E6CF', '#DCEDC1', '#FFD3B6', '#FFAAA5', '#FF8B94'], l: 318, d: 0 }
+  { id: 's1', n: 'ส้มอิฐตลาดนัด', a: 'passawut.a.place', src: 'camera', c: ['#B5523B', '#D7987E', '#9B563B', '#5E3323', '#26140E'], l: 24, d: 0 },
+  { id: 's2', n: 'Sage & Eucalyptus', a: 'ploy.ink', src: 'image', c: ['#A9BBA6', '#C9D4C5', '#6E8F6A', '#E6EAE2'], l: 12, d: 1 },
+  { id: 's3', n: 'แสงบ่ายผ่านหน้าต่าง', a: 'mild.studio', src: 'image', c: ['#E3B85B', '#C98E3A', '#F2D9A0', '#8A5A2B'], l: 18, d: 0 },
+  { id: 's4', n: 'ผนังน้ำเงินกรมท่า', a: 'arm.archi', src: 'camera', c: ['#355C76', '#1F3A4D', '#6E8FA3', '#C9D3D6'], l: 9, d: 2 },
+  { id: 's5', n: 'ไม้สักเก่า + ปูนเปลือย', a: 'baanmai.design', src: 'camera', c: ['#5C3A21', '#9A6B3F', '#C8A27C', '#B8B5AE', '#5E5E5E'], l: 31, d: 3 },
+  { id: 's6', n: 'ผ้าไหมไทย', a: 'fai.handwoven', src: 'image', c: ['#7A1F3D', '#C9A227', '#2E5E4E', '#E8D8B0', '#4A1A6B'], l: 47, d: 5 },
+  { id: 's7', n: 'ดินเผาเชียงใหม่', a: 'clay.and.co', src: 'camera', c: ['#B5532E', '#D98E5F', '#EBC9A7', '#6B4B3E'], l: 15, d: 4 },
+  { id: 's8', n: 'มินต์พาสเทลคาเฟ่', a: 'ploy.brand', src: 'image', c: ['#A8E6CF', '#DCEDC1', '#FFD3B6', '#FFAAA5'], l: 7, d: 6 },
 ];
-let feedF = 'hot';
-function allPosts() {
-  return [...S.shared.map(p => ({ ...p, mine: true })), ...SEED.map(p => ({ ...p, t: Date.now() - p.d * 864e5 }))]
+const FEED = { f: 'all' };
+function posts() {
+  return [...S.shared.map(p => ({ ...p, mine: true })), ...SEED.map(p => ({ ...p, t: Date.now() - p.d * 864e5 - hash(p.id) % 7200000 }))]
     .map(p => ({ ...p, liked: !!S.likes[p.id], likes: (p.l || 0) + (S.likes[p.id] ? 1 : 0) }));
 }
 function renderCommunity() {
-  $('#shareGroup').innerHTML = S.groups.length ? S.groups.map(g => `<option value="${g.id}">${esc(g.name)} (${S.colors.filter(c => c.groupId === g.id).length} สี)</option>`).join('') : '<option value="">ยังไม่มีกลุ่ม</option>';
-  let posts = allPosts();
-  if (feedF === 'hot') posts.sort((a, b) => b.likes - a.likes);
-  if (feedF === 'new') posts.sort((a, b) => b.t - a.t);
-  if (feedF === 'mine') posts = posts.filter(p => p.mine);
-  if (feedF === 'liked') posts = posts.filter(p => p.liked);
-  $('#feed').innerHTML = posts.length ? posts.map(p => `
-    <div class="card post">
-      <div class="strip">${p.c.map(h => `<button data-copy="${h}" style="background:${h}" title="${h}"></button>`).join('')}</div>
-      <div class="meta"><div class="grow"><b>${esc(p.n)}</b><div class="muted tiny">@${esc(p.a)}${p.mine ? ' · คุณ' : ''} · ${p.c.length} สี</div></div>
-        <button class="btn sm like ${p.liked ? 'on' : ''}" data-like="${p.id}">♥ ${p.likes}</button>
-        <button class="btn sm" data-share="${p.id}">แชร์</button>
-        <button class="btn sm pri" data-imp="${p.id}">นำเข้า</button></div>
-    </div>`).join('') : '<div class="empty">ยังไม่มีชุดสีในหมวดนี้</div>';
-  const find = id => posts.find(p => p.id === id);
-  $$('#feed [data-copy]').forEach(b => b.onclick = () => copy(b.dataset.copy));
-  $$('#feed [data-like]').forEach(b => b.onclick = () => { const id = b.dataset.like; S.likes[id] ? delete S.likes[id] : S.likes[id] = 1; save(); renderCommunity(); });
-  $$('#feed [data-share]').forEach(b => b.onclick = () => { const p = find(b.dataset.share); sharePalette(p.n, p.c); });
-  $$('#feed [data-imp]').forEach(b => b.onclick = () => { const p = find(b.dataset.imp); importPalette(p.n, p.c); });
+  const F = [['all', 'ทั้งหมด'], ['new', 'ใหม่'], ['pop', 'ยอดนิยม'], ['camera', 'วัดของจริง'], ['image', 'จากภาพ'], ['mine', 'ของฉัน'], ['liked', 'ที่ถูกใจ']];
+  $('#feedChips').innerHTML = F.map(([k, n]) => `<button class="chip ${FEED.f === k ? 'on' : ''}" data-act="f" data-f="${k}">${n}</button>`).join('');
+  let ps = posts();
+  if (FEED.f === 'new') ps.sort((a, b) => b.t - a.t);
+  else if (FEED.f === 'pop') ps.sort((a, b) => b.likes - a.likes);
+  else if (FEED.f === 'camera' || FEED.f === 'image') ps = ps.filter(p => p.src === FEED.f);
+  else if (FEED.f === 'mine') ps = ps.filter(p => p.mine);
+  else if (FEED.f === 'liked') ps = ps.filter(p => p.liked);
+  $('#feed').innerHTML = ps.length ? ps.map(postCard).join('') : `<div class="empty" style="column-span:all">${FEED.f === 'mine' ? 'ยังไม่ได้แชร์ชุดสี<br>เปิดกลุ่มสีในคลัง แล้วกดไอคอนชุมชน' : 'ยังไม่มีชุดสีในหมวดนี้'}</div>`;
 }
-$$('#feedTabs .chip').forEach(b => b.onclick = () => { feedF = b.dataset.f; $$('#feedTabs .chip').forEach(x => x.classList.toggle('on', x === b)); renderCommunity(); });
-function importPalette(name, hexes) {
-  const g = addGroup(name);
-  [...hexes].reverse().forEach(h => addColor(h, null, g.id, 'community'));
-  toast('นำเข้า “' + name + '” ' + hexes.length + ' สี ลงคลังแล้ว');
+function postCard(p) {
+  const h = 110 + hash(p.id) % 80, main = p.c[0], who = p.mine ? (S.me || 'ฉัน') : p.a;
+  return `<div class="post" data-id="${p.id}">
+    <div class="top" style="background:${main};color:${textOn(main)}"><span>${main}</span>${p.src === 'camera' ? '<span class="src dev">วัดของจริง</span>' : '<span class="src img">จากภาพ</span>'}</div>
+    <button class="art" data-act="open" data-id="${p.id}" style="display:block;width:100%;height:${h}px;${p.thumb ? `background-image:url(${p.thumb})` : mesh(p.c)}" aria-label="เปิด ${esc(p.n)}"></button>
+    <div class="strip" style="height:10px;border-radius:0">${stripHtml(p.c)}</div>
+    <div class="bd"><b>${esc(p.n)}</b><div class="who"><i class="av" style="background:${p.c[1] || main}">${esc(who[0] || '?').toUpperCase()}</i><span>${esc(who)} · ${ago(p.t)}</span></div></div>
+    <div class="acts"><button data-act="like" data-id="${p.id}" class="${p.liked ? 'on' : ''}" aria-label="ถูกใจ">${ic(p.liked ? 'heartF' : 'heart', 18)}${p.likes}</button><button data-act="imp" data-id="${p.id}" aria-label="เก็บเข้าคลัง">${ic('bookmark', 18)}</button><button data-act="share" data-id="${p.id}" aria-label="แชร์">${ic('share', 18)}</button></div>
+  </div>`;
 }
-function shareLink(name, hexes) {
-  return location.origin + location.pathname + '#p=' + encodeURIComponent(name) + '~' + hexes.map(h => h.replace('#', '')).join('-');
+const findPost = id => posts().find(p => p.id === id);
+$('#v-community')._acts = {
+  f: t => { FEED.f = t.dataset.f; renderCommunity(); },
+  like: t => { const id = t.dataset.id; S.likes[id] ? delete S.likes[id] : (S.likes[id] = 1); save(); renderCommunity(); },
+  imp: t => { const p = findPost(t.dataset.id); importPalette(p.n, p.c, p.thumb); },
+  share: t => { const p = findPost(t.dataset.id); sharePalette(p.n, p.c); },
+  open: t => postSheet(findPost(t.dataset.id)),
+  profile: async () => { const n = await ask('ชื่อที่แสดงในชุมชน', S.me, { ph: 'เช่น mild.studio', ok: 'บันทึก' }); if (n !== null) { S.me = n.replace(/^@/, ''); save(); renderCommunity(); } },
+};
+function postSheet(p) {
+  openSheet(`<div class="sheetsw" style="${p.thumb ? `background:url(${p.thumb}) center/cover` : mesh(p.c)};height:150px"></div>
+    <div class="strip" style="margin-top:10px;height:50px">${stripHtml(p.c, 'button', 'ref')}</div>
+    <div style="margin:14px 2px 6px"><b style="font-size:18px">${esc(p.n)}</b><div class="sub">${esc(p.mine ? (S.me || 'ฉัน') : p.a)} · ${ago(p.t)} · ${p.c.length} สี</div></div>
+    <div class="card flush" style="background:var(--bg)">${p.c.map(h => `<div class="crow" style="grid-template-columns:44px 1fr 44px"><div class="sw" style="width:44px;height:44px;background:${h}"></div><div><b style="font-size:15px">${h}</b><span>${nameOf(h)}</span></div><button class="cpy" data-copy="${h}">${ic('copy', 19)}</button></div>`).join('')}</div>
+    <div class="row" style="margin-top:14px"><button class="btn soft grow" data-act="sh">${ic('share', 18)}แชร์ลิงก์</button><button class="btn pri grow" data-act="im">${ic('bookmark', 18)}เก็บเข้าคลัง</button></div>`,
+    () => ({ ref: t => refColorSheet(t.dataset.hex), sh: () => sharePalette(p.n, p.c), im: () => { closeSheet(); importPalette(p.n, p.c, p.thumb); } }));
 }
+function importPalette(name, hexes, thumb) {
+  const g = addGroup(name, thumb ? { thumb } : {});
+  hexes.forEach((h, i) => { const c = addColor(h, { groupId: g.id, source: 'community' }); c.t += i; });
+  save(); refreshAll(); toast(`เก็บ “${name}” ${hexes.length} สีเข้าคลังแล้ว`, 'เปิด', () => openGroup(g.id));
+}
+const shareLink = (name, hexes) => location.origin + location.pathname + '#p=' + encodeURIComponent(name) + '~' + hexes.map(h => h.slice(1)).join('-');
 async function sharePalette(name, hexes) {
-  const url = shareLink(name, hexes), text = `ชุดสี “${name}” จาก Picker: ${hexes.join(' ')}`;
-  if (navigator.share) { try { await navigator.share({ title: 'Picker — ' + name, text, url }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+  const url = shareLink(name, hexes.slice(0, 24));
+  if (navigator.share && matchMedia('(pointer:coarse)').matches) { try { await navigator.share({ title: 'Picker · ' + name, text: `ชุดสี “${name}” ${hexes.join(' ')}`, url }); return; } catch (e) { if (e.name === 'AbortError') return; } }
   copy(url, 'ลิงก์ชุดสี');
 }
-function shareGroup(gid) {
-  const g = S.groups.find(x => x.id === gid); if (!g) return toast('เลือกกลุ่มก่อน');
-  const hexes = S.colors.filter(c => c.groupId === gid).map(c => c.hex);
-  if (!hexes.length) return toast('กลุ่มนี้ยังไม่มีสี');
-  if (!S.shared.some(p => p.gid === gid)) S.shared.unshift({ id: 'm' + uid(), gid, n: g.name, a: 'ฉัน', c: hexes.slice(0, 12), t: Date.now(), l: 0 });
-  else Object.assign(S.shared.find(p => p.gid === gid), { n: g.name, c: hexes.slice(0, 12) });
-  save(); if (tab === 'community') renderCommunity();
-  sharePalette(g.name, hexes.slice(0, 12));
+function shareToCommunity(g) {
+  const cs = groupColors(g.id); if (!cs.length) return toast('กลุ่มนี้ยังไม่มีสี');
+  const srcs = cs.map(c => c.source), src = srcs.filter(s => s === 'camera').length >= srcs.length / 2 ? 'camera' : 'image';
+  let p = S.shared.find(x => x.gid === g.id);
+  if (!p) { p = { id: 'm' + uid(), gid: g.id, l: 0 }; S.shared.unshift(p); }
+  Object.assign(p, { n: g.name, c: cs.slice(0, 12).map(c => c.hex), src, thumb: g.thumb, t: Date.now() });
+  save();
+  toast(`โพสต์ “${g.name}” ในชุมชนแล้ว`, 'ดูฟีด', () => { while (pages.length) popPage(); FEED.f = 'mine'; go('community'); });
 }
-$('#btnShareGroup').onclick = () => shareGroup($('#shareGroup').value);
 function checkIncoming() {
   const m = location.hash.match(/^#p=([^~]*)~([0-9a-fA-F-]+)$/); if (!m) return;
-  const name = decodeURIComponent(m[1]).slice(0, 60) || 'ชุดสีที่ได้รับ';
-  const hexes = m[2].split('-').filter(h => HEXRE.test(h)).slice(0, 24).map(h => '#' + h.toUpperCase());
+  let name; try { name = decodeURIComponent(m[1]).slice(0, 60); } catch (e) { name = ''; }
+  name ||= 'ชุดสีที่ได้รับ';
+  const hexes = m[2].split('-').map(normHex).filter(Boolean).slice(0, 24);
   history.replaceState(null, '', location.pathname);
   if (!hexes.length) return;
-  openSheet(`<b style="font-size:17px">มีคนแชร์ชุดสีให้คุณ</b>
-    <div class="strip" style="margin:12px 0">${hexes.map(h => `<div style="background:${h}"></div>`).join('')}</div>
-    <div><b>${esc(name)}</b> <span class="muted">· ${hexes.length} สี</span></div>
-    <div class="mono tiny muted" style="margin-top:4px">${hexes.join(' ')}</div>
-    <div class="row" style="margin-top:14px"><button class="btn grow" id="iNo">ไม่ใช่ตอนนี้</button><button class="btn pri grow" id="iYes">นำเข้าคลังสี</button></div>`, b => {
-    b.querySelector('#iNo').onclick = closeSheet;
-    b.querySelector('#iYes').onclick = () => { importPalette(name, hexes); closeSheet(); go('library'); };
-  });
+  openSheet(`<h3 class="st">มีคนแชร์ชุดสีให้คุณ</h3>
+    <div class="sheetsw" style="${mesh(hexes)};margin-top:10px"></div>
+    <div class="strip" style="margin:10px 0;height:50px">${stripHtml(hexes)}</div>
+    <b style="font-size:17px">${esc(name)}</b> <span class="sub">· ${hexes.length} สี</span>
+    <div class="sub tiny disp" style="margin-top:4px">${hexes.join('  ')}</div>
+    <div class="row" style="margin-top:16px"><button class="btn soft grow" data-act="no">ไว้ทีหลัง</button><button class="btn pri grow" data-act="ok">เก็บเข้าคลังสี</button></div>`,
+    () => ({ no: closeSheet, ok: () => { closeSheet(); importPalette(name, hexes); go('library'); } }));
 }
 
-/* ============ 05 EXPORT ============ */
-let expSrc = 'all', fmt = 'css';
-const slug = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'color';
-function expColors() {
-  const list = expSrc === 'all' ? S.colors : S.colors.filter(c => c.groupId === expSrc);
-  const seen = {}; return [...list].reverse().map((c, i) => { let k = slug(c.name); if (k === 'color') k = 'color-' + (i + 1); if (seen[k]) k += '-' + (++seen[k]); else seen[k] = 1; return { ...c, key: k }; });
-}
-const FMTS = {
-  css: { t: 'CSS', s: 'ตัวแปร', ext: 'css', note: 'ใช้กับเว็บ/Figma Tokens ได้ทันที', gen: L => `:root {\n${L.map(c => `  --${c.key}: ${c.hex};`).join('\n')}\n}\n` },
-  scss: { t: 'SCSS', s: 'ตัวแปร', ext: 'scss', note: 'สำหรับโปรเจกต์ Sass', gen: L => L.map(c => `$${c.key}: ${c.hex};`).join('\n') + '\n' },
-  tw: { t: 'Tailwind', s: 'config', ext: 'js', note: 'วางใน tailwind.config.js → theme.extend.colors', gen: L => `module.exports = {\n  theme: { extend: { colors: {\n${L.map(c => `    '${c.key}': '${c.hex}',`).join('\n')}\n  } } }\n};\n` },
-  json: { t: 'JSON', s: 'ข้อมูลครบ', ext: 'json', note: 'ทุกค่า HEX/RGB/HSL/CMYK/LAB สำหรับนักพัฒนา', gen: L => JSON.stringify(L.map(c => { const i = info(c.hex); return { name: c.name, hex: c.hex, rgb: [i.r, i.g, i.b], hsl: [i.h, i.s, i.l], cmyk: i.c, lab: i.L }; }), null, 2) },
-  ase: { t: 'ASE', s: 'Adobe', ext: 'ase', bin: true, note: 'Adobe Swatch Exchange — นำเข้า Illustrator, Photoshop, InDesign (Swatches › Open Swatch Library › Other Library)', gen: L => L.map(c => `${c.hex}  ${c.name}`).join('\n') },
-  gpl: { t: 'GPL', s: 'GIMP/Krita', ext: 'gpl', note: 'พาเลตต์สำหรับ GIMP, Inkscape, Krita, Aseprite', gen: L => `GIMP Palette\nName: Picker ${expTitle()}\nColumns: ${Math.min(8, L.length)}\n#\n` + L.map(c => `${String(rgbOf(c.hex)[0]).padStart(3)} ${String(rgbOf(c.hex)[1]).padStart(3)} ${String(rgbOf(c.hex)[2]).padStart(3)}\t${c.name}`).join('\n') + '\n' },
-  print: { t: 'พิมพ์', s: 'CMYK CSV', ext: 'csv', note: 'ค่า CMYK แปลงจาก sRGB แบบทั่วไป (ไม่ใช้โปรไฟล์ ICC) — ควรขอปรู๊ฟสีจากโรงพิมพ์ก่อนพิมพ์จริง', gen: L => 'name,hex,R,G,B,C,M,Y,K,L*,a*,b*\n' + L.map(c => { const i = info(c.hex); return [`"${c.name.replace(/"/g, '""')}"`, c.hex, i.r, i.g, i.b, ...i.c, ...i.L].join(','); }).join('\n') + '\n' },
-  png: { t: 'PNG', s: 'การ์ดสี', ext: 'png', bin: true, note: 'ภาพการ์ดพาเลตต์พร้อมค่า HEX/RGB/CMYK สำหรับส่งลูกค้าหรือแนบบรีฟ', gen: L => L.map(c => c.hex).join('  ') },
-  hex: { t: 'HEX', s: 'ข้อความ', ext: 'txt', note: 'รายการ HEX ล้วน วางใน Figma, Canva, Procreate ได้', gen: L => L.map(c => c.hex).join('\n') + '\n' }
+/* =========================================================
+   05 · ส่งออกไปงานดีไซน์ & งานพิมพ์
+   ========================================================= */
+function slug(name, no) { const s = String(name || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); return s || 'color-' + (no || 1); }
+function keyed(colors) { const seen = {}; return colors.map(c => { let k = slug(c.name, c.no); if (seen[k]) k += '-' + (++seen[k]); else seen[k] = 1; return { ...c, key: k }; }); }
+const camel = k => k.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
+const CODE = {
+  hex: L => L.map(c => c.hex).join('\n'),
+  rgb: L => L.map(c => `rgb(${rgbOf(c.hex).join(', ')})`).join('\n'),
+  css: L => `:root {\n${L.map(c => `  --${c.key}: ${c.hex};`).join('\n')}\n}`,
+  tailwind: L => `colors: {\n${L.map(c => `  '${c.key}': '${c.hex}',`).join('\n')}\n}`,
+  hsl: L => L.map(c => { const h = toHsl(...rgbOf(c.hex)); return `hsl(${Math.round(h[0])} ${Math.round(h[1])}% ${Math.round(h[2])}%)`; }).join('\n'),
+  lab: L => L.map(c => { const l = labOf(c.hex); return `lab(${r1(l[0])}% ${r1(l[1])} ${r1(l[2])})`; }).join('\n'),
+  scss: L => L.map(c => `$${c.key}: ${c.hex};`).join('\n'),
+  json: L => JSON.stringify(L.map(c => { const I = info(c.hex); return { name: c.name, hex: c.hex, rgb: I.rgb, lab_d50: I.L5.map(v => +r1(v)), cmyk_approx: I.cmyk }; }), null, 2),
+  swift: L => L.map(c => { const [r, g, b] = rgbOf(c.hex).map(v => (v / 255).toFixed(3)); return `static let ${camel(c.key)} = Color(red: ${r}, green: ${g}, blue: ${b})`; }).join('\n'),
+  android: L => `<resources>\n${L.map(c => `  <color name="${c.key.replace(/-/g, '_')}">#FF${c.hex.slice(1)}</color>`).join('\n')}\n</resources>`,
+  flutter: L => L.map(c => `const ${camel(c.key)} = Color(0xFF${c.hex.slice(1)});`).join('\n'),
 };
-function expTitle() { return expSrc === 'all' ? 'ทั้งหมด' : groupName(expSrc); }
-function renderExport() {
-  if (expSrc !== 'all' && !S.groups.some(g => g.id === expSrc)) expSrc = 'all';
-  $('#expSrc').innerHTML = `<option value="all">ทุกสีในคลัง (${S.colors.length})</option>` + S.groups.map(g => `<option value="${g.id}" ${g.id === expSrc ? 'selected' : ''}>${esc(g.name)} (${S.colors.filter(c => c.groupId === g.id).length})</option>`).join('');
-  $('#fmts').innerHTML = Object.entries(FMTS).map(([k, f]) => `<button data-f="${k}" class="${k === fmt ? 'on' : ''}"><b>${f.t}</b><small>${f.s}</small></button>`).join('');
-  $$('#fmts button').forEach(b => b.onclick = () => { fmt = b.dataset.f; renderExport(); });
-  const L = expColors(), f = FMTS[fmt];
-  $('#expStrip').innerHTML = L.length ? L.map(c => `<div style="background:${c.hex}"></div>`).join('') : '<div class="muted tiny" style="display:grid;place-items:center;background:var(--panel2)">ไม่มีสี</div>';
-  $('#fmtNote').textContent = f.note;
-  $('#expOut').value = L.length ? f.gen(L) : '';
-  $('#btnExpCopy').disabled = !L.length || f.bin; $('#btnExpDl').disabled = !L.length;
+function openExport(o) {
+  const L = keyed(o.colors.map(c => ({ hex: c.hex, name: c.name, no: c.no, source: c.source })));
+  const st = { moreCode: false, moreDl: false };
+  const one = L.length === 1;
+  const render = () => `
+    <h3 class="st">ส่งออก &amp; แชร์</h3><div class="sub">${esc(o.title)} · ${L.length} สี</div>
+    <div class="xsec"><h4>Share link</h4><div class="sub">เปิดดูได้ไม่ต้องล็อกอิน · มีแค่โค้ดสีกับชื่อสี</div>
+      <div class="xbtns"><button class="xb" data-act="link">${ic('link', 18)}Copy link</button>${navigator.share ? `<button class="xb" data-act="nshare">${ic('share', 18)}แชร์…</button>` : ''}</div></div>
+    <div class="xsec"><h4>Copy as code <button class="more" data-act="mc">${st.moreCode ? 'Less' : 'More'} ${ic('chev', 15)}</button></h4>
+      <div class="xbtns">${[['hex', 'HEX'], ['rgb', 'RGB'], ['css', 'CSS'], ['tailwind', 'Tailwind']].concat(st.moreCode ? [['hsl', 'HSL'], ['lab', 'Lab'], ['scss', 'SCSS'], ['json', 'JSON'], ['swift', 'SwiftUI'], ['android', 'Android'], ['flutter', 'Flutter']] : []).map(([k, n]) => `<button class="xb" data-act="code" data-k="${k}">${n}</button>`).join('')}</div></div>
+    <div class="xsec"><h4>Image</h4>
+      <div class="xbtns">${[['slide', 'Slide 16:9'], ['post', 'Post 1:1'], ['story', 'Story 9:16']].map(([k, n]) => `<button class="xb" data-act="img" data-k="${k}">${ic('image', 18)}${n}</button>`).join('')}</div></div>
+    <div class="xsec"><h4>Download <button class="more" data-act="md">${st.moreDl ? 'Less' : 'More'} ${ic('chev', 15)}</button></h4>
+      <div class="xbtns"><button class="xb" data-act="dl" data-k="ase">${ic('download', 18)}ASE <small>· Adobe, Affinity</small></button>
+      <button class="xb" data-act="dl" data-k="svg">${ic('figma', 18)}SVG <small>· Figma, Canva</small></button>
+      <button class="xb" data-act="dl" data-k="procreate">${ic('download', 18)}Procreate</button>
+      <button class="xb" data-act="dl" data-k="pdf">${ic('download', 18)}PDF <small>· A4 spec</small></button>
+      ${st.moreDl ? `<button class="xb" data-act="dl" data-k="gpl">${ic('download', 18)}GPL <small>· GIMP, Krita</small></button><button class="xb" data-act="dl" data-k="csv">${ic('download', 18)}CSV <small>· ค่าพิมพ์</small></button><button class="xb" data-act="dl" data-k="sketch">${ic('download', 18)}Sketch</button><button class="xb" data-act="dl" data-k="json">${ic('download', 18)}JSON</button>` : ''}</div></div>
+    <div class="xsec"><h4>Open in apps</h4>
+      <div class="apps">${[['figma', 'Figma', ic('figma', 18)], ['ps', 'Photoshop', 'Ps'], ['ai', 'Illustrator', 'Ai'], ['id', 'InDesign', 'Id'], ['canva', 'Canva', 'Ca'], ['procreate', 'Procreate', 'Pr'], ['affinity', 'Affinity', 'Af'], ['sketch', 'Sketch', ic('gem', 18)], ['slides', 'Slides', ic('slides', 18)], ['code', 'Code', ic('code', 18)]].map(([k, n, lg]) => `<button class="appt" data-act="app" data-k="${k}"><span class="lg">${lg}</span>${n}</button>`).join('')}</div></div>`;
+  const rerender = () => { $('#sheetBody').innerHTML = render(); };
+  openSheet(render(), () => ({
+    mc: () => { st.moreCode = !st.moreCode; rerender(); },
+    md: () => { st.moreDl = !st.moreDl; rerender(); },
+    link: () => copy(shareLink(o.title, L.map(c => c.hex)), 'ลิงก์'),
+    nshare: () => sharePalette(o.title, L.map(c => c.hex)),
+    code: t => { const k = t.dataset.k; copy(one && k === 'hex' ? L[0].hex : CODE[k](L), t.textContent.trim()); },
+    img: async t => deliver(await renderCard(L, o.title, t.dataset.k), `picker-${slug(o.title, 1)}-${t.dataset.k}.png`),
+    dl: t => download(t.dataset.k, L, o.title),
+    app: t => openInApp(t.dataset.k, L, o.title),
+  }));
 }
-$('#expSrc').onchange = e => { expSrc = e.target.value; renderExport(); };
-$('#btnExpCopy').onclick = () => copy($('#expOut').value, FMTS[fmt].t);
-$('#btnExpDl').onclick = () => {
-  const L = expColors(), f = FMTS[fmt], name = 'picker-' + slug(expTitle()) + '.' + f.ext;
-  if (fmt === 'ase') return download(name, makeASE(L), 'application/octet-stream');
-  if (fmt === 'png') return makePNG(L).then(b => download(name, b));
-  download(name, f.gen(L), fmt === 'json' ? 'application/json' : fmt === 'print' ? 'text/csv' : 'text/plain');
-};
+async function download(k, L, title) {
+  const base = 'picker-' + slug(title, 1);
+  try {
+    if (k === 'ase') return deliver(makeASE(L), base + '.ase');
+    if (k === 'svg') return deliver(new Blob([makeSVG(L)], { type: 'image/svg+xml' }), base + '.svg');
+    if (k === 'procreate') return deliver(makeProcreate(L, title), base + '.swatches');
+    if (k === 'pdf') { toast('กำลังสร้าง PDF…'); return deliver(await makePDF(L, title), base + '.pdf'); }
+    if (k === 'gpl') return deliver(new Blob([`GIMP Palette\nName: ${title}\nColumns: ${Math.min(8, L.length)}\n#\n` + L.map(c => `${rgbOf(c.hex).map(v => String(v).padStart(3)).join(' ')}\t${c.name}`).join('\n') + '\n'], { type: 'text/plain' }), base + '.gpl');
+    if (k === 'csv') return deliver(new Blob(['﻿name,hex,R,G,B,C,M,Y,K,L*(D50),a*,b*\n' + L.map(c => { const I = info(c.hex); return [`"${c.name.replace(/"/g, '""')}"`, c.hex, ...I.rgb, ...I.cmyk, ...I.L5.map(r1)].join(','); }).join('\n')], { type: 'text/csv' }), base + '.csv');
+    if (k === 'sketch') return deliver(new Blob([JSON.stringify({ compatibleVersion: '2.0', pluginVersion: '2.22', colors: L.map(c => { const [r, g, b] = rgbOf(c.hex); return { name: c.name, red: r / 255, green: g / 255, blue: b / 255, alpha: 1 }; }) })], { type: 'application/json' }), base + '.sketchpalette');
+    if (k === 'json') return deliver(new Blob([CODE.json(L)], { type: 'application/json' }), base + '.json');
+  } catch (e) { toast('สร้างไฟล์ไม่สำเร็จ: ' + e.message); }
+}
+async function openInApp(k, L, title) {
+  if (k === 'figma') { await copy(makeSVG(L), 'SVG'); return toast('คัดลอกแล้ว · ไปที่ Figma แล้ววาง (⌘V / Ctrl+V) จะได้แผ่นสีพร้อมชื่อ'); }
+  if (['ps', 'ai', 'id', 'affinity'].includes(k)) { await download('ase', L, title); return setTimeout(() => toast(k === 'affinity' ? 'Affinity: Swatches › Import Palette › เลือกไฟล์ .ase' : 'Adobe: Swatches › Open Swatch Library › Other Library › เลือกไฟล์ .ase'), 600); }
+  if (k === 'canva') { await copy(L.map(c => c.hex).join(' '), 'HEX'); return toast('คัดลอก HEX แล้ว · ใน Canva เปิด Brand Kit › Add color แล้ววาง'); }
+  if (k === 'procreate') return download('procreate', L, title);
+  if (k === 'sketch') return download('sketch', L, title);
+  if (k === 'slides') return deliver(await renderCard(L, title, 'slide'), `picker-${slug(title, 1)}-slide.png`);
+  if (k === 'code') return copy(CODE.css(L), 'CSS');
+}
+async function deliver(blob, filename) {
+  const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
+  if (matchMedia('(pointer:coarse)').matches && navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: filename }); return; } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast('ดาวน์โหลด ' + filename);
+}
 function makeASE(L) {
   const blocks = L.map(c => {
     const name = c.name.slice(0, 60) + '\0', nl = name.length, len = 2 + nl * 2 + 4 + 12 + 2;
     const b = new DataView(new ArrayBuffer(6 + len)); let o = 0;
-    b.setUint16(o, 0x0001); o += 2; b.setUint32(o, len); o += 4; b.setUint16(o, nl); o += 2;
+    b.setUint16(o, 1); o += 2; b.setUint32(o, len); o += 4; b.setUint16(o, nl); o += 2;
     for (let i = 0; i < nl; i++) { b.setUint16(o, name.charCodeAt(i)); o += 2; }
-    'RGB '.split('').forEach(ch => { b.setUint8(o++, ch.charCodeAt(0)); });
+    for (const ch of 'RGB ') b.setUint8(o++, ch.charCodeAt(0));
     rgbOf(c.hex).forEach(v => { b.setFloat32(o, v / 255); o += 4; });
     b.setUint16(o, 2); return b.buffer;
   });
-  const head = new DataView(new ArrayBuffer(12));
-  [0x41, 0x53, 0x45, 0x46].forEach((v, i) => head.setUint8(i, v)); head.setUint16(4, 1); head.setUint16(6, 0); head.setUint32(8, L.length);
-  return new Blob([head.buffer, ...blocks], { type: 'application/octet-stream' });
+  const h = new DataView(new ArrayBuffer(12));
+  [0x41, 0x53, 0x45, 0x46].forEach((v, i) => h.setUint8(i, v)); h.setUint16(4, 1); h.setUint16(6, 0); h.setUint32(8, L.length);
+  return new Blob([h.buffer, ...blocks], { type: 'application/octet-stream' });
 }
-function makePNG(L) {
-  const cols = Math.min(L.length, 6), rows = Math.ceil(L.length / cols), cw = 260, ch = 360, pad = 40;
-  const cv = document.createElement('canvas'); cv.width = cols * cw + pad * 2; cv.height = rows * ch + pad * 2 + 70;
-  const x = cv.getContext('2d'); x.fillStyle = '#ffffff'; x.fillRect(0, 0, cv.width, cv.height);
-  x.fillStyle = '#111'; x.font = '600 30px "IBM Plex Sans Thai", sans-serif'; x.fillText('Picker · ' + expTitle(), pad, pad + 26);
-  L.forEach((c, k) => {
-    const cx = pad + (k % cols) * cw, cy = pad + 70 + Math.floor(k / cols) * ch, i = info(c.hex);
-    x.fillStyle = c.hex; x.fillRect(cx + 8, cy, cw - 16, 220);
-    x.strokeStyle = '#e5e5e5'; x.strokeRect(cx + 8.5, cy + .5, cw - 17, 219);
-    x.fillStyle = '#111'; x.font = '600 20px "IBM Plex Sans Thai", sans-serif'; x.fillText(c.name.slice(0, 18), cx + 10, cy + 252);
-    x.font = '500 17px "JetBrains Mono", monospace'; x.fillText(c.hex, cx + 10, cy + 280);
-    x.fillStyle = '#666'; x.font = '15px "JetBrains Mono", monospace';
-    x.fillText('RGB ' + i.rgb, cx + 10, cy + 304); x.fillText('CMYK ' + i.c.join(' '), cx + 10, cy + 326);
-  });
+function makeSVG(L) {
+  const w = 160, gap = 16, W = L.length * (w + gap) - gap;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="230" viewBox="0 0 ${W} 230">` + L.map((c, i) => {
+    const x = i * (w + gap);
+    return `<g><rect x="${x}" y="0" width="${w}" height="160" rx="14" fill="${c.hex}"/><text x="${x}" y="190" font-family="Helvetica, Arial, sans-serif" font-size="18" fill="#262624">${c.hex}</text><text x="${x}" y="214" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#86837B">${esc(c.name)}</text></g>`;
+  }).join('') + '</svg>';
+}
+/* minimal ZIP (store) for Procreate .swatches */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = u8 => { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zip(files) {
+  const enc = new TextEncoder(), parts = [], cd = []; let off = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name), data = f.data, crc = crc32(data);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true);
+    parts.push(lh.buffer, name, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true); ch.setUint32(42, off, true);
+    cd.push(ch.buffer, name); off += 30 + name.length + data.length;
+  }
+  const cdSize = cd.reduce((a, b) => a + (b.byteLength ?? b.length), 0), end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, cdSize, true); end.setUint32(16, off, true);
+  return new Blob([...parts, ...cd, end.buffer], { type: 'application/zip' });
+}
+function makeProcreate(L, title) {
+  const sw = L.slice(0, 30).map(c => { const [h, s, v] = toHsb(...rgbOf(c.hex)); return { hue: h / 360, saturation: s / 100, brightness: v / 100, alpha: 1, colorSpace: 0 }; });
+  return zip([{ name: 'Swatches.json', data: new TextEncoder().encode(JSON.stringify([{ name: title.slice(0, 40), swatches: sw }])) }]);
+}
+/* image cards */
+async function fontsReady() { try { await Promise.all(['300 40px Anuphan', '600 40px Anuphan', '300 40px Lexend', '400 40px Lexend'].map(f => document.fonts.load(f, 'กA#1'))); } catch (e) {} }
+function rr(ctx, x, y, w, h, r) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h); }
+function drawLogo(ctx, x, y, size, color) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(size / 40, size / 40); ctx.strokeStyle = color; ctx.lineWidth = 4.6; ctx.lineCap = 'square';
+  LOGO_PATHS.forEach(d => ctx.stroke(new Path2D(d))); ctx.lineCap = 'butt'; ctx.stroke(new Path2D('M9.5 17v3.5M30.5 23v-3.5')); ctx.restore();
+}
+const TH = '"Anuphan", sans-serif', DS = '"Lexend", "Anuphan", sans-serif';
+async function renderCard(L, title, kind) {
+  await fontsReady();
+  const [W, H] = { slide: [1920, 1080], post: [1080, 1080], story: [1080, 1920] }[kind];
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d');
+  const pad = Math.round(Math.min(W, H) * .075), foot = pad * 1.25;
+  x.fillStyle = '#F2F1ED'; x.fillRect(0, 0, W, H);
+  x.fillStyle = '#262624'; x.font = `300 ${Math.round(Math.min(W, H) * .056)}px ${TH}`; x.textBaseline = 'alphabetic';
+  x.fillText(L.length === 1 ? L[0].name : title, pad, pad + Math.min(W, H) * .05);
+  x.fillStyle = '#86837B'; x.font = `400 ${Math.round(Math.min(W, H) * .022)}px ${DS}`;
+  x.fillText(L.length === 1 ? `Color #${L[0].no || 1} · ${SRC_EN[L[0].source] || 'Saved'}` : `${L.length} colors · Picker palette`, pad, pad + Math.min(W, H) * .095);
+  const top = pad + Math.min(W, H) * .14, bot = H - foot - pad * .4, aw = W - pad * 2, ah = bot - top;
+  const fs = Math.min(W, H);
+  const label = (c, bx, by, bw, bh, big) => {
+    const I = info(c.hex), fg = textOn(c.hex); x.fillStyle = fg;
+    const hs = Math.round(fs * (big ? .085 : L.length > 5 ? .032 : .042)), ls = Math.round(fs * (big ? .026 : .018)), lx = bx + Math.min(bw, bh) * .07 + 6;
+    const lines = big ? [`RGB  ${I.sRgb}`, `Lab D50  ${I.sLab}`, `CMYK ≈  ${I.sCmyk}`] : [c.name, `RGB ${I.sRgb}`];
+    let ly = by + bh - Math.min(bw, bh) * .07 - 6 - (lines.length - 1) * ls * 1.5;
+    x.font = `300 ${hs}px ${DS}`; x.fillText(c.hex, lx, ly - ls * 1.7, bw - 20);
+    lines.forEach((t, i) => { x.font = `${i === 0 && !big ? 500 : 400} ${ls}px ${i === 0 && !big ? TH : DS}`; x.globalAlpha = .88; x.fillText(t, lx, ly + i * ls * 1.5, bw - 24); x.globalAlpha = 1; });
+  };
+  if (L.length === 1) { x.fillStyle = L[0].hex; rr(x, pad, top, aw, ah, fs * .02); x.fill(); label(L[0], pad, top, aw, ah, true); }
+  else {
+    const vert = H > W * 1.2, n = L.length, g = Math.round(fs * .012);
+    L.forEach((c, i) => {
+      const bx = vert ? pad : pad + i * (aw + g) / n, by = vert ? top + i * (ah + g) / n : top, bw = vert ? aw : (aw + g) / n - g, bh = vert ? (ah + g) / n - g : ah;
+      x.fillStyle = c.hex; rr(x, bx, by, bw, bh, fs * .016); x.fill(); label(c, bx, by, bw, bh, false);
+    });
+  }
+  const fy = H - pad * .9, ls = Math.round(fs * .03);
+  drawLogo(x, pad, fy - ls * 1.05, ls * 1.3, '#E8432B');
+  x.fillStyle = '#262624'; x.font = `300 ${ls}px ${DS}`; x.fillText('samecor.', pad + ls * 1.6, fy);
+  const wm = x.measureText('samecor. ').width; x.font = `400 ${ls}px ${DS}`; x.fillText('Picker', pad + ls * 1.6 + wm, fy);
+  x.fillStyle = '#86837B'; x.font = `300 ${Math.round(ls * .8)}px ${DS}`; x.textAlign = 'right'; x.fillText(location.host || 'picker', W - pad, fy);
   return new Promise(r => cv.toBlob(r, 'image/png'));
 }
+function loadScript(src) { return new Promise((res, rej) => { if ([...document.scripts].some(s => s.src === src)) return res(); const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('โหลดตัวสร้าง PDF ไม่ได้ ตรวจสอบอินเทอร์เน็ต')); document.head.appendChild(s); }); }
+async function makePDF(L, title) {
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'); await fontsReady();
+  const { jsPDF } = window.jspdf, pdf = new jsPDF({ unit: 'mm', format: 'a4' }), per = 6, pagesN = Math.ceil(L.length / per);
+  for (let pg = 0; pg < pagesN; pg++) {
+    const W = 1240, H = 1754, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'), m = 96;
+    x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
+    drawLogo(x, m, m - 4, 40, '#E8432B'); x.fillStyle = '#262624'; x.font = `300 30px ${DS}`; x.fillText('samecor. Picker', m + 52, m + 26);
+    x.fillStyle = '#86837B'; x.font = `400 20px ${TH}`; x.textAlign = 'right'; x.fillText(`Color spec · ${new Date().toLocaleDateString('th-TH', { dateStyle: 'medium' })} · หน้า ${pg + 1}/${pagesN}`, W - m, m + 24); x.textAlign = 'left';
+    x.fillStyle = '#262624'; x.font = `600 46px ${TH}`; x.fillText(title, m, m + 112, W - m * 2);
+    x.fillStyle = '#E8432B'; x.fillRect(m, m + 138, 70, 5);
+    L.slice(pg * per, pg * per + per).forEach((c, i) => {
+      const y = m + 190 + i * 222, I = info(c.hex);
+      x.fillStyle = c.hex; rr(x, m, y, 330, 186, 14); x.fill(); x.strokeStyle = '#E7E5DF'; x.lineWidth = 2; x.stroke();
+      x.fillStyle = '#262624'; x.font = `500 30px ${TH}`; x.fillText(c.name, m + 370, y + 36, W - m * 2 - 380);
+      x.font = `300 40px ${DS}`; x.fillText(c.hex, m + 370, y + 86);
+      x.font = `400 21px ${DS}`; x.fillStyle = '#47463F';
+      [[`RGB  ${I.sRgb}`, `CMYK ≈  ${I.sCmyk}`], [`Lab D50  ${I.sLab}`, `LCh  ${I.sLch}`]].forEach((row, j) => row.forEach((t, k) => x.fillText(t, m + 370 + k * 330, y + 128 + j * 34)));
+    });
+    x.fillStyle = '#86837B'; x.font = `400 18px ${TH}`;
+    x.fillText('CMYK แปลงจาก sRGB แบบทั่วไป (ไม่ผ่าน ICC) · ใช้ค่า Lab D50 เทียบกับโรงพิมพ์ · ควรขอปรู๊ฟสีจริงก่อนพิมพ์', m, H - m + 20);
+    if (pg) pdf.addPage();
+    pdf.addImage(cv.toDataURL('image/jpeg', .92), 'JPEG', 0, 0, 210, 297);
+  }
+  return pdf.output('blob');
+}
 
-/* ============ boot ============ */
-updCal(); placeReticle(); renderLibrary(); checkIncoming();
+/* =========================================================
+   Boot
+   ========================================================= */
+updCal(); placeRet(); checkIncoming();
 window.addEventListener('hashchange', checkIncoming);
 if ('serviceWorker' in navigator && window.isSecureContext && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+save();
 </script>
 </body>
 </html>
