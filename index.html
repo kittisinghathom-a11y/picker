@@ -69,6 +69,12 @@ button:focus-visible,label:focus-visible,input:focus-visible{outline:2px solid v
 .ibtn{width:48px;height:48px;flex:none;border-radius:14px;border:1px solid var(--line2);background:var(--surface);display:grid;place-items:center;color:var(--ink)}
 .ibtn.big{width:56px;height:56px}
 .ibtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.lang{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);font:500 12px/1 Lexend,system-ui,sans-serif;letter-spacing:.04em;color:var(--ink2);flex:none}
+.lang span{padding:6px 9px;border-radius:999px}
+.lang span.on{background:var(--ink);color:#fff}
+.brandbar .lang{margin-left:auto}
+.chead .lang{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.75);margin-right:4px}
+.chead .lang span.on{background:#fff;color:var(--ink)}
 .nb{width:44px;height:44px;display:grid;place-items:center;color:var(--ink);border-radius:12px}
 .seg{display:inline-flex;background:var(--surface);border:1px solid var(--line2);border-radius:12px;padding:3px;gap:2px}
 .seg button{padding:7px 12px;border-radius:9px;font-size:13px;color:var(--ink2);white-space:nowrap}
@@ -404,7 +410,7 @@ function ago(t) {
   const d = Math.floor(s / 86400);
   if (d === 1) return 'เมื่อวาน';
   if (d < 7) return d + ' วันที่แล้ว';
-  return new Date(t).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+  return new Date(t).toLocaleDateString(LOC(), { day: 'numeric', month: 'short', year: '2-digit' });
 }
 const hash = s => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) | 0; return Math.abs(h); };
 
@@ -458,6 +464,203 @@ const P = {
 const ic = (n, s = 22, sw = 1.7) => `<svg class="i" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n] || ''}</svg>`;
 const LOGO_PATHS = ['M31 10.5H14.5a5 5 0 0 0-5 5V17', 'M9 29.5h16.5a5 5 0 0 0 5-5V23'];
 const logoMark = (sw = 4.6) => `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="square" aria-hidden="true">${LOGO_PATHS.map(d => `<path d="${d}"/>`).join('')}<path d="M9.5 17v3.5M30.5 23v-3.5" stroke-linecap="butt"/></svg>`;
+/* =========================================================
+   Language · TH / EN
+   The app is written in Thai. In EN mode a translation layer
+   rewrites text nodes and labels on screen, and T() is used
+   for text that leaves the page (files, share text, canvas).
+   ========================================================= */
+const EN = {
+  // measure
+  'คาลิเบรตแล้ว': 'Calibrated', 'ไฟฉาย': 'Torch', 'คาลิเบรตแสงขาว': 'White calibration', 'สลับกล้อง': 'Switch camera',
+  'จุด': 'Dot', 'เล็ก': 'S', 'กลาง': 'M', 'ใหญ่': 'L',
+  'เล็งกรอบไปที่วัสดุจริง': 'Aim the frame at a real material',
+  'ผ้า ไม้ สีทาผนัง กระเบื้อง กระดาษ': 'Fabric, wood, wall paint, tile, paper', 'แตะจอเพื่อเลือกจุดวัด': 'tap to choose the spot',
+  'เปิดกล้อง': 'Open camera', 'หรือถ่ายภาพ': 'Or take a photo', 'เปิดกล้องเพื่อเริ่มวัดสี': 'Open the camera to start measuring',
+  'หยุดภาพ': 'Freeze', 'จิ้มสีนี้': 'Pick this color', 'เก็บเข้าคลัง': 'Save to library',
+  'กล้องสดต้องเปิดผ่านลิงก์ https': 'Live camera needs an https link', 'ใช้ปุ่ม “หรือถ่ายภาพ” แทนได้': 'use “Or take a photo” instead',
+  'ยังไม่ได้อนุญาตกล้อง': 'Camera permission not granted', 'เปิดสิทธิ์กล้องในการตั้งค่าเบราว์เซอร์ หรือใช้ปุ่ม “หรือถ่ายภาพ”': 'allow the camera in browser settings, or use “Or take a photo”',
+  'เปิดกล้องแล้วเล็งที่วัสดุก่อน': 'Open the camera and aim at a material first', 'ดูสี': 'View', 'เปิดไฟฉายไม่ได้ในอุปกรณ์นี้': 'Torch is not available on this device',
+  'วางกระดาษขาว A4 ใต้แสงเดียวกับวัสดุ เล็งกรอบไปที่กระดาษ แล้วกด “ตั้งค่าขาว” แอปจะชดเชยสีของแสง (เช่นไฟเหลือง) ให้ค่าที่วัดได้ใกล้สีจริงขึ้น': 'Place white A4 paper under the same light as the material, aim the frame at the paper and tap “Set white”. The app compensates for the color of the light (such as warm bulbs) so readings get closer to the true color.',
+  'ตั้งค่าขาวจากจุดนี้': 'Set white from this spot', 'เปิดกล้องก่อนเพื่อวัดค่าขาว': 'Open the camera first to measure white',
+  'ปิดการชดเชย': 'Turn off compensation', 'เปิดการชดเชย': 'Turn on compensation', 'ล้างค่า': 'Reset',
+  'ค่าที่วัดต่อจากนี้ชดเชยแสงให้แล้ว': 'new readings are light-compensated',
+  // library
+  'เพิ่ม': 'Add', 'คลังสี': 'Library', 'กลุ่มสี': 'Groups', '& กลุ่มสี': '& Groups', 'จัดกลุ่มตามโปรเจกต์': 'grouped by project',
+  'ค้นหาชื่อสีหรือ HEX': 'Search color name or HEX', 'สีทั้งหมด': 'All colors', 'ปักหมุด': 'Pinned', 'ตัวอย่าง': 'Example',
+  'ไม่พบกลุ่มที่ค้นหา': 'No matching groups', 'ยังไม่มีกลุ่มสี': 'No groups yet', 'กด + เพื่อสร้างกลุ่มแรก': 'Tap + to create your first group',
+  'ไม่พบสีที่ค้นหา': 'No matching colors', 'ยังไม่มีสีที่ปักหมุด': 'No pinned colors yet', 'กดไอคอนบุ๊กมาร์กในหน้าสีเพื่อปักหมุด': 'Tap the bookmark icon on a color to pin it',
+  'ยังไม่มีสีในคลัง': 'Your library is empty', 'ไปที่ “วัดสี” แล้วจิ้มของจริงได้เลย': 'Go to “Measure” and pick from something real',
+  'เพิ่มใหม่': 'Add new', 'สร้างกลุ่มสีใหม่': 'New color group', 'เพิ่มสีด้วยโค้ด HEX': 'Add a color by HEX code', 'วัดสีจากวัสดุจริง': 'Measure a real material',
+  'สร้างกลุ่ม': 'Create group', 'เพิ่มสี': 'Add color', 'โค้ดสีไม่ถูกต้อง ใช้รูปแบบ #RRGGBB': 'Invalid color code · use #RRGGBB',
+  'บันทึกไม่ได้ พื้นที่เก็บข้อมูลในเบราว์เซอร์เต็ม ลองลบภาพในกลุ่มสีเก่าออก': 'Could not save · browser storage is full. Try removing images from old groups.',
+  'กลุ่มใหม่': 'New group', 'คัดลอก': 'Copy', 'คัดลอก แล้ว': 'Copied', 'ยกเลิก': 'Cancel', 'ตกลง': 'OK', 'ยืนยัน': 'Confirm',
+  'ย้ายไปกลุ่ม': 'Move to group', 'ไม่มีกลุ่ม': 'No group', 'สร้างกลุ่มใหม่': 'Create new group', 'ชื่อกลุ่มใหม่': 'New group name',
+  'เช่น บ้านคุณเอ': 'e.g. A’s house', 'ห้องนั่งเล่น': 'Living room',
+  // color page
+  'สีนี้ถูกลบแล้ว': 'This color was deleted', 'กลับ': 'Back', 'ตัวเลือก': 'Options', 'เต็มจอ': 'Full screen', 'บันทึก': 'Save', 'บันทึกไว้': 'Saved',
+  'สีตัวอย่าง': 'Example color', '≈ ประมาณ': '≈ approx.', 'อธิบายค่าสี': 'About color values', 'ย่อ': 'Less', 'ส่งออกและแชร์': 'Export & share',
+  'ย้ายกลุ่ม': 'Move to group', 'ปักหมุดแล้ว': 'Pinned', 'เลิกปักหมุดแล้ว': 'Unpinned', 'นำออกจากกลุ่มแล้ว': 'Removed from group',
+  'ชื่อสี': 'Color name', 'แตะเพื่อปิด': 'tap to close', 'เปลี่ยนชื่อสี': 'Rename color', 'ทำสำเนา': 'Duplicate', 'ลบสีนี้': 'Delete this color',
+  '(สำเนา)': '(copy)', 'ทำสำเนาแล้ว': 'Duplicated', 'เปิด': 'Open', 'ลบสี': 'Delete color', 'สีนี้จะถูกลบออกจากคลังและกลุ่ม กู้คืนไม่ได้': 'This color will be removed from your library and groups. This cannot be undone.',
+  'ลบสีแล้ว': 'Color deleted', 'ค่าสีแต่ละแบบใช้ทำอะไร': 'What each color value is for',
+  'รหัสสีสำหรับเว็บ แอป Figma Canva': 'Color code for web, apps, Figma, Canva',
+  'ค่าแสงแดง เขียว น้ำเงิน (sRGB) สำหรับงานจอ': 'Red, green and blue light values (sRGB) for screens',
+  'ค่าสีตามการมองเห็นของมนุษย์ (CIE Lab, แสงอ้างอิง D50) ใช้เทียบสีกับโรงพิมพ์และวัดความต่างสี ΔE': 'Color as humans see it (CIE Lab, D50 illuminant). Use it to match with printers and to measure color difference ΔE',
+  'ค่าประมาณสำหรับงานพิมพ์ แปลงจาก sRGB แบบทั่วไป ควรขอปรู๊ฟสีจริง': 'Approximate print values, converted from sRGB generically. Ask for a real color proof.',
+  'ใกล้เคียงในคลังของคุณ': 'Similar in your library',
+  'เหมือนกัน': 'Identical', 'แทบแยกไม่ออก': 'Nearly identical', 'ใกล้มาก': 'Very close', 'ใกล้เคียง': 'Close', 'ต่างกันชัด': 'Clearly different',
+  'วัดด้วยกล้อง': 'Measured · camera', 'วัดด้วยเครื่อง': 'Measured · device', 'จากภาพ': 'From photo', 'จากชุมชน': 'From community', 'ป้อนเอง': 'Entered manually', 'จากชุดสีแนะนำ': 'From suggestions',
+  'คู่ตรงข้าม': 'Complementary', 'สามเส้า': 'Triadic', 'แยกคู่ตรงข้าม': 'Split complementary', 'สี่เหลี่ยม': 'Tetradic', 'ไล่น้ำหนัก': 'Tonal',
+  'ชุดสีที่เข้ากัน': 'Matching palettes', 'คำนวณบน LCh': 'computed in LCh', 'แตะสีเพื่อดู': 'tap a color to view', 'บันทึกเป็นกลุ่ม': 'Save as group',
+  'ตัวใหญ่': 'Large', 'ความชัดของตัวอักษร': 'Text contrast', 'ตัวขาว': 'White text', 'ตัวดำ': 'Black text', 'โค้ดสำหรับนักพัฒนา': 'Code for developers',
+  'หมึกรวม': 'Total ink', 'สูงเกินงานพิมพ์ทั่วไป': 'too high for most printing', 'พิมพ์ขาวดำ': 'Grayscale print',
+  'CMYK แปลงจาก sRGB แบบทั่วไป ยังไม่ผ่านโปรไฟล์ ICC ของโรงพิมพ์': 'CMYK is a generic conversion from sRGB, not through the printer’s ICC profile',
+  'ส่งค่า Lab D50 ให้โรงพิมพ์เทียบจะแม่นกว่า และควรขอปรู๊ฟสีก่อนพิมพ์จริง': 'sending Lab D50 to the printer is more accurate, and ask for a proof before the real run',
+  'สเกลสีแบรนด์': 'Brand color scale', 'กรอบคือสีต้นฉบับ': 'outlined = original color', 'ใช้เป็นโทเคนสีของแบรนด์ทั้งระบบ': 'use as brand color tokens across your system',
+  'คัดลอก CSS': 'Copy CSS', 'บันทึกสเกลเป็นกลุ่มสี': 'Save scale as group', 'ΔE คืออะไร': 'What is ΔE',
+  'ΔE2000 คือค่าความต่างของสีตามการมองเห็น ยิ่งน้อยยิ่งเหมือน เทียบกับคลังชื่อสีอ้างอิงในแอป': 'ΔE2000 is the perceived difference between colors. Lower means more alike. Compared with the app’s reference color names.',
+  'เหมือนกัน ตาแยกไม่ได้': 'Identical to the eye', 'แทบแยกไม่ออก ต้องสังเกตใกล้ๆ': 'Nearly identical, needs a close look', 'ใกล้เคียง เห็นต่างเมื่อวางคู่กัน': 'Close, visible side by side',
+  'ต่างกันชัด เห็นได้ทันที': 'Clearly different at a glance',
+  'CSS สเกลสี': 'CSS scale', 'Tailwind สเกลสี': 'Tailwind scale', 'สเกลแบรนด์': 'Brand scale', 'คัดลอก HEX': 'Copy HEX',
+  // group page
+  'กลุ่มนี้ถูกลบแล้ว': 'This group was deleted', 'แก้ไข': 'Edit', 'เพิ่มคำอธิบายกลุ่ม': 'Add a description',
+  'ยังไม่มีสีในกลุ่มนี้': 'No colors in this group yet', 'วัดสีใหม่ แล้วกด “ย้ายกลุ่ม” หรือเพิ่มด้วยโค้ด HEX': 'Measure a new color and tap “Move to group”, or add one by HEX',
+  'แชร์เข้าชุมชน': 'Share to community', 'ส่งออก & แชร์': 'Export & share',
+  'คู่สีที่ ΔE2000 ต่ำกว่า 8 คนทั่วไปจะแยกยากเมื่อใช้คู่กันในกราฟหรือป้าย': 'Pairs under ΔE2000 8 are hard for most people to tell apart in charts or signs',
+  'คู่สีที่ใช้เป็นตัวอักษรบนพื้นได้ (คอนทราสต์ ≥ 4.5:1 ตาม WCAG AA)': 'Pairs usable as text on background (contrast ≥ 4.5:1, WCAG AA)',
+  'จำลองการมองเห็นของผู้มีภาวะตาบอดสี Deutan (เขียว) Protan (แดง) Tritan (น้ำเงิน) ประมาณ 8% ของผู้ชาย': 'Simulates color-vision deficiency: Deutan (green), Protan (red), Tritan (blue), about 8% of men',
+  'ป้อนโค้ด HEX': 'Enter HEX code', 'แก้ไขกลุ่มสี': 'Edit group', 'ชื่อกลุ่ม': 'Group name', 'คำอธิบาย': 'Description',
+  'อารมณ์ของโทนสี วัสดุ หรือโปรเจกต์ที่ใช้': 'Mood, materials, or the project it’s for', 'ตั้งเป็นกลุ่มปลายทางเมื่อวัดสี': 'Save new measurements here',
+  'ลบภาพปกกลุ่ม': 'Remove cover image', 'ลบกลุ่ม': 'Delete group', 'สีที่วัดจะไม่เข้ากลุ่มใด': 'New measurements won’t go to a group', 'ลบกลุ่มแล้ว': 'Group deleted',
+  'ขาวดำ': 'Grayscale', 'แยกกันชัดทุกคู่': 'Every pair is distinct', 'โปรเจกต์แรก': 'First project',
+  'โทนสีธรรมชาติ อบอุ่น เหมาะกับงานตกแต่งภายในที่ต้องการความผ่อนคลาย': 'Warm, natural tones for relaxing interiors.',
+  // image
+  'ดึงสีจากภาพ': 'Colors from a photo', 'ได้ชุดสีทันที': 'instant palette', 'ถ่ายภาพ เลือกรูป หรือลากไฟล์มาวาง': 'Take a photo, choose one, or drop a file',
+  'แอปจะหาสีเด่นและสัดส่วนให้อัตโนมัติ': 'The app finds the main colors and their proportions', 'ถ่ายภาพ': 'Take photo', 'เลือกรูป': 'Choose photo',
+  'ให้สีจากภาพแม่นขึ้น': 'For more accurate photo colors', 'ถ่ายใต้แสงธรรมชาติหรือแสงขาว หลีกเลี่ยงไฟสีเหลือง': 'Shoot in daylight or white light, avoid warm bulbs',
+  'ลากกรอบเฉพาะพื้นที่วัสดุ ตัดเงาและพื้นหลังออก': 'Drag a frame over just the material, leaving out shadows and background',
+  'งานที่ต้องการค่าแม่นยำ ใช้โหมดวัดสีด้วยกล้องพร้อมคาลิเบรตแสงขาว': 'For exact values, use camera measuring with white calibration',
+  'ชุดสีจากภาพล่าสุด': 'Recent photo palettes', 'เปิดไฟล์ภาพนี้ไม่ได้ ลองไฟล์ JPG หรือ PNG': 'Can’t open this image · try a JPG or PNG',
+  'ใช้ทั้งภาพ': 'Use whole image', 'ผลลัพธ์จากภาพ': 'Photo result', 'ลากบนภาพเพื่อวาดกรอบใหม่': 'Drag on the photo to draw a new frame', 'แตะเพื่อจิ้มสีจุดเดียว': 'tap to pick a single spot',
+  'เรียงตามสัดส่วน': 'By proportion', 'เลือกภาพใหม่': 'Choose another photo', 'บันทึกเป็นกลุ่มสี': 'Save as group', 'จุดที่แตะ': 'tapped spot',
+  'ตั้งชื่อกลุ่มสี': 'Name this group', 'ชุดสีจากภาพ': 'Photo palette',
+  // community
+  'ชุมชนสี': 'Color community', 'โปรไฟล์': 'Profile', 'ชุดสีตัวอย่าง + ชุดสีที่คุณแชร์': 'Sample palettes + palettes you share',
+  'ส่งต่อให้เพื่อนด้วยลิงก์ เปิดได้ไม่ต้องล็อกอิน': 'send to friends by link, no login needed',
+  'ทั้งหมด': 'All', 'ใหม่': 'New', 'ยอดนิยม': 'Popular', 'วัดของจริง': 'Measured', 'ของฉัน': 'Mine', 'ที่ถูกใจ': 'Liked',
+  'ยังไม่ได้แชร์ชุดสี': 'You haven’t shared a palette yet', 'เปิดกลุ่มสีในคลัง แล้วกดไอคอนชุมชน': 'Open a group in your library and tap the community icon',
+  'ยังไม่มีชุดสีในหมวดนี้': 'No palettes in this category yet', 'ฉัน': 'me', 'ถูกใจ': 'Like', 'แชร์': 'Share',
+  'ชื่อที่แสดงในชุมชน': 'Community display name', 'เช่น mild.studio': 'e.g. mild.studio', 'ข้อความชุดสี': 'Palette text',
+  'กลุ่มนี้ยังไม่มีสี': 'This group has no colors yet', 'ดูฟีด': 'View feed', 'ชุดสีที่ได้รับ': 'Received palette',
+  'มีคนแชร์ชุดสีให้คุณ': 'Someone shared a palette with you', 'ไว้ทีหลัง': 'Later', 'เก็บเข้าคลังสี': 'Save to library',
+  'ส้มอิฐตลาดนัด': 'Market Brick Orange', 'แสงบ่ายผ่านหน้าต่าง': 'Afternoon Window Light', 'ผนังน้ำเงินกรมท่า': 'Navy Blue Wall',
+  'ไม้สักเก่า + ปูนเปลือย': 'Old Teak + Bare Concrete', 'ผ้าไหมไทย': 'Thai Silk', 'ดินเผาเชียงใหม่': 'Chiang Mai Terracotta', 'มินต์พาสเทลคาเฟ่': 'Pastel Mint Café',
+  // export
+  'ส่งชื่อสีกับโค้ดสี ลงท้ายด้วย': 'Sends color names and codes, signed', 'คัดลอกข้อความ': 'Copy text', 'แชร์…': 'Share…', 'ลิงก์นำเข้า': 'Import link',
+  'มีเว็บไซต์': 'includes website', 'ค่าพิมพ์': 'print values', 'ลิงก์': 'Link', 'ข้อความ': 'Text', 'กำลังสร้าง PDF…': 'Creating PDF…',
+  'คัดลอกแล้ว': 'Copied', 'ไปที่ Figma แล้ววาง (⌘V / Ctrl+V) จะได้แผ่นสีพร้อมชื่อ': 'paste in Figma (⌘V / Ctrl+V) to get labeled swatches',
+  'เลือกไฟล์ .ase': 'choose the .ase file', 'คัดลอก HEX แล้ว': 'HEX copied', 'ใน Canva เปิด Brand Kit › Add color แล้ววาง': 'in Canva open Brand Kit › Add color and paste',
+  'โหลดตัวสร้าง PDF ไม่ได้ ตรวจสอบอินเทอร์เน็ต': 'Couldn’t load the PDF maker · check your internet',
+  'CMYK แปลงจาก sRGB แบบทั่วไป (ไม่ผ่าน ICC)': 'CMYK is a generic sRGB conversion (no ICC)', 'ใช้ค่า Lab D50 เทียบกับโรงพิมพ์': 'use Lab D50 to match with your printer',
+  'ควรขอปรู๊ฟสีจริงก่อนพิมพ์': 'ask for a real proof before printing',
+  // tabs & time
+  'วัดสี': 'Measure', 'ชุมชน': 'Community', 'เมื่อสักครู่': 'just now', 'เมื่อวาน': 'yesterday',
+  // reference color names
+  'ขาวกระดาษ': 'Paper White', 'ขาวงาช้าง': 'Ivory', 'ลินิน': 'Linen', 'ครีม': 'Cream', 'ทราย': 'Sand', 'น้ำตาลทราย': 'Sandy Brown', 'เบจ': 'Beige', 'กากี': 'Khaki',
+  'ไม้โอ๊ค': 'Oak', 'ไม้สัก': 'Teak', 'วอลนัท': 'Walnut', 'ช็อกโกแลต': 'Chocolate', 'คาราเมล': 'Caramel', 'ทองแดง': 'Copper', 'ดินเผา': 'Terracotta', 'อิฐ': 'Brick',
+  'ส้มอิฐ': 'Brick Orange', 'ส้ม': 'Orange', 'พีช': 'Peach', 'แอปริคอต': 'Apricot', 'มัสตาร์ด': 'Mustard', 'ออกเคอร์': 'Ochre', 'ทอง': 'Gold', 'เหลือง': 'Yellow',
+  'เหลืองพาสเทล': 'Pastel Yellow', 'เขียวมะนาว': 'Lime', 'เขียวมะกอก': 'Olive', 'เขียวเสจ': 'Sage', 'เขียวเสจเข้ม': 'Deep Sage', 'เขียวใบไม้': 'Leaf Green',
+  'เขียวมรกต': 'Emerald', 'เขียวหยก': 'Jade', 'เขียวขวด': 'Bottle Green', 'มิ้นต์': 'Mint', 'เทอร์ควอยซ์': 'Turquoise', 'ฟ้าทะเล': 'Ocean Blue', 'ฟ้า': 'Sky Blue',
+  'ฟ้าพาสเทล': 'Pastel Blue', 'ฟ้าคราม': 'Cobalt', 'น้ำเงิน': 'Blue', 'กรมท่า': 'Navy', 'ยีนส์': 'Denim', 'น้ำเงินเทา': 'Slate Blue', 'ลาเวนเดอร์': 'Lavender',
+  'ม่วง': 'Purple', 'ม่วงองุ่น': 'Grape', 'ชมพูพาสเทล': 'Pastel Pink', 'ชมพูกุหลาบ': 'Rose Pink', 'โอลด์โรส': 'Old Rose', 'บานเย็น': 'Magenta', 'แดงชาด': 'Vermilion',
+  'แดงเลือดนก': 'Crimson', 'แดงไวน์': 'Wine', 'เทาอ่อน': 'Light Gray', 'เทาปูน': 'Concrete Gray', 'เทา': 'Gray', 'เทาชาร์โคล': 'Charcoal', 'ดำ': 'Black', 'เงิน': 'Silver',
+};
+// sentences whose word order changes; captured parts are translated afterwards
+const EN_RULES = [
+  [/^คัดลอก (.+?) ?แล้ว$/, 'Copied $1'],
+  [/^เก็บ (#\w+) เข้ากลุ่ม “(.+)”แล้ว$/, 'Saved $1 to “$2”'], [/^เก็บ (#\w+) เข้าคลังแล้ว$/, 'Saved $1 to library'], [/^เก็บ (#\w+) แล้ว$/, 'Saved $1'],
+  [/^ย้ายไป “(.+)” แล้ว$/, 'Moved to “$1”'], [/^บันทึก “(.+)” (\d+) สีแล้ว$/, 'Saved “$1” · $2 colors'], [/^บันทึกสเกล (\d+) สีแล้ว$/, 'Saved $1-step scale'],
+  [/^เพิ่มสีเข้า “(.+)”$/, 'Add color to “$1”'], [/^สีที่วัดจะเข้ากลุ่ม “(.+)”$/, 'New measurements go to “$1”'], [/^ลบกลุ่ม “(.+)”\?$/, 'Delete group “$1”?'],
+  [/^สี (\d+) สีในกลุ่มจะยังอยู่ในคลัง \(ไม่มีกลุ่ม\)$/, 'The $1 colors in this group stay in your library (no group).'],
+  [/^บันทึก (\d+) สีลง “(.+)” แล้ว$/, 'Saved $1 colors to “$2”'], [/^เก็บ “(.+)” (\d+) สีเข้าคลังแล้ว$/, 'Saved “$1” ($2 colors) to library'],
+  [/^โพสต์ “(.+)” ในชุมชนแล้ว$/, 'Posted “$1” to Community'], [/^ชุดสี “(.+)”$/, 'Palette “$1”'], [/^ลบสี (#\w+)\?$/, 'Delete $1?'],
+  [/^สีที่ยังไม่มีกลุ่ม (\d+) สี$/, 'Ungrouped colors · $1'], [/^เปิดกล้องไม่ได้ \((.*)\)$/, 'Can’t open camera ($1)'],
+  [/^Deutan แยกยาก (\d+) คู่$/, 'Deutan: $1 hard pairs'], [/^แยกยาก (\d+) คู่$/, '$1 hard-to-tell pairs'], [/^Aa อ่านออก (\d+)\/(\d+) คู่$/, 'Aa readable $1/$2 pairs'],
+  [/^หน้า (\d+)\/(\d+)$/, 'Page $1/$2'], [/^ดาวน์โหลด (.+)$/, 'Downloaded $1'], [/^สร้างไฟล์ไม่สำเร็จ: (.*)$/, 'Couldn’t create file: $1'],
+  [/^อัปเดต (.+)$/, 'Updated $1'], [/^บันทึก (.+)$/, 'Saved $1'], [/^จิ้มสีนี้$/, 'Pick this color'],
+  [/(\d+) นาทีที่แล้ว/g, '$1 min ago'], [/(\d+) ชั่วโมงที่แล้ว/g, '$1 h ago'], [/(\d+) วันที่แล้ว/g, '$1 days ago'],
+  [/^1 สี$/, '1 color'], [/(\d+) สี(?![฀-๿])/g, '$1 colors'],
+];
+const HAS_TH = /[฀-๿]/;
+const EN_KEYS = Object.keys(EN).sort((a, b) => b.length - a.length)
+  .map(k => { const e = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); return [...k].length > 4 ? e : `(?<![\\u0E00-\\u0E7F])${e}(?![\\u0E00-\\u0E7F])`; });
+const EN_ANY = new RegExp(EN_KEYS.join('|'), 'g');
+const trCache = new Map();
+function trSeg(s) {
+  const lead = s.match(/^\s*/)[0], tail = s.match(/\s*$/)[0], core = s.trim();
+  if (!HAS_TH.test(core)) return s;
+  if (EN[core]) return lead + EN[core] + tail;
+  let r = core, hit = false;
+  for (const [re, to] of EN_RULES) { if (hit && !re.global) continue; const n = r.replace(re, to); if (n !== r) { r = n; if (!re.global) hit = true; } }
+  r = r.replace(EN_ANY, m => EN[m] ?? m);
+  return lead + r + tail;
+}
+function tr(s) {
+  if (!s || !HAS_TH.test(s)) return s;
+  let r = trCache.get(s); if (r !== undefined) return r;
+  r = EN[s.trim()] ? trSeg(s) : s.split('\n').map(line => EN[line.trim()] ? trSeg(line) : line.split(/(\s·\s)/).map(p => p.trim() === '·' ? p : trSeg(p)).join('')).join('\n');
+  if (trCache.size > 3000) trCache.clear();
+  trCache.set(s, r); return r;
+}
+let LANG = (() => { try { return localStorage.getItem('picker.lang'); } catch (e) { return null; } })() === 'en' ? 'en' : 'th';
+const T = s => LANG === 'en' ? tr(s) : s;
+const LOC = () => LANG === 'en' ? 'en-GB' : 'th-TH';
+
+const TXT = new WeakMap(), ATR = new WeakMap(), TR_ATTRS = ['placeholder', 'aria-label', 'title'];
+const SKIP = /^(SCRIPT|STYLE|TEXTAREA)$/;
+function trText(n) {
+  const p = n.parentNode; if (!p || SKIP.test(p.nodeName)) return;
+  const v = n.data, r = TXT.get(n);
+  if (r && v === r[1]) { if (LANG === 'th') { n.data = r[0]; TXT.delete(n); } return; }
+  if (r) TXT.delete(n);
+  if (LANG !== 'en' || !HAS_TH.test(v)) return;
+  const o = tr(v); if (o !== v) { TXT.set(n, [v, o]); n.data = o; }
+}
+function trAttr(el, a) {
+  const v = el.getAttribute(a); if (v == null) return;
+  let m = ATR.get(el); const r = m && m[a];
+  if (r && v === r[1]) { if (LANG === 'th') { el.setAttribute(a, r[0]); delete m[a]; } return; }
+  if (r) delete m[a];
+  if (LANG !== 'en' || !HAS_TH.test(v)) return;
+  const o = tr(v); if (o !== v) { if (!m) ATR.set(el, m = {}); m[a] = [v, o]; el.setAttribute(a, o); }
+}
+function trTree(root) {
+  if (root.nodeType === 3) return trText(root);
+  if (root.nodeType !== 1 || SKIP.test(root.nodeName)) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) trText(n);
+  [root, ...root.querySelectorAll('[placeholder],[aria-label],[title]')].forEach(el => TR_ATTRS.forEach(a => el.hasAttribute && el.hasAttribute(a) && trAttr(el, a)));
+}
+new MutationObserver(ms => ms.forEach(m => {
+  if (m.type === 'characterData') trText(m.target);
+  else if (m.type === 'attributes') trAttr(m.target, m.attributeName);
+  else m.addedNodes.forEach(trTree);
+})).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: TR_ATTRS });
+function langBtnHtml() { return `<span class="${LANG === 'th' ? 'on' : ''}">TH</span><span class="${LANG === 'en' ? 'on' : ''}">EN</span>`; }
+function setLang(l) {
+  LANG = l; try { localStorage.setItem('picker.lang', l); } catch (e) {}
+  document.documentElement.lang = l;
+  $$('.lang').forEach(b => { b.innerHTML = langBtnHtml(); b.setAttribute('aria-label', l === 'en' ? 'ภาษาไทย' : 'English'); });
+  if (typeof refreshAll === 'function') try { refreshAll(); } catch (e) {}
+  trTree(document.body);
+}
+function mountLang() {
+  const mk = () => { const b = document.createElement('button'); b.className = 'lang'; b.type = 'button'; b.onclick = () => setLang(LANG === 'en' ? 'th' : 'en'); return b; };
+  $$('.brandbar').forEach(bar => { const b = mk(); const logo = bar.querySelector('.logo'); logo.after(b); });
+  const cr = $('#meBtn'); if (cr) cr.before(mk());
+  setLang(LANG);
+}
+
 $$('[data-logo]').forEach(e => e.innerHTML = `${logoMark()}Picker Pro`);
 $$('[data-logo-art]').forEach(e => e.innerHTML = logoMark(3.4));
 $$('[data-ic]').forEach(e => e.outerHTML = ic(e.dataset.ic, 22));
@@ -1188,9 +1391,9 @@ function imagePage(el, p, st) {
     k: t => { st.k = +t.dataset.k; $$('.seg button', el).forEach(b => b.classList.toggle('on', b === t)); extract(st); update(); },
     one: async t => { const gid = await chooseGroup(S.lastGroup); if (gid === undefined) return; const c = addColor(t.dataset.hex, { groupId: gid, source: 'image' }); toast('เก็บ ' + c.hex + ' แล้ว', 'เปิด', () => openColor(c.id)); },
     save: async () => {
-      const n = await ask('ตั้งชื่อกลุ่มสี', 'ชุดสีจากภาพ ' + new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }), { ok: 'บันทึก' });
+      const n = await ask('ตั้งชื่อกลุ่มสี', T('ชุดสีจากภาพ') + ' ' + new Date().toLocaleDateString(LOC(), { day: 'numeric', month: 'short' }), { ok: 'บันทึก' });
       if (n === null) return;
-      const g = addGroup(n || 'ชุดสีจากภาพ', { thumb: makeThumb(st.cv, st.crop) });
+      const g = addGroup(n || T('ชุดสีจากภาพ'), { thumb: makeThumb(st.cv, st.crop) });
       st.pal.forEach((c, i) => { const x = addColor(c.hex, { groupId: g.id, source: 'image' }); x.t += i; });
       save(); popPage(); setTimeout(() => openGroup(g.id), 330); toast(`บันทึก ${st.pal.length} สีลง “${g.name}” แล้ว`);
     },
@@ -1267,7 +1470,7 @@ function importPalette(name, hexes, thumb) {
   save(); refreshAll(); toast(`เก็บ “${name}” ${hexes.length} สีเข้าคลังแล้ว`, 'เปิด', () => openGroup(g.id));
 }
 const shareLink = (name, hexes) => location.origin + location.pathname + '#p=' + encodeURIComponent(name) + '~' + hexes.map(h => h.slice(1)).join('-');
-const shareText = (name, hexes) => `ชุดสี “${name}”\n${hexes.join('  ')}\n\n${SHARE_NAME}`;
+const shareText = (name, hexes) => T(`ชุดสี “${name}”`) + `\n${hexes.join('  ')}\n\n${SHARE_NAME}`;
 async function sharePalette(name, hexes) {
   const text = shareText(name, hexes.slice(0, 24));
   if (navigator.share && matchMedia('(pointer:coarse)').matches) { try { await navigator.share({ title: SHARE_NAME, text }); return; } catch (e) { if (e.name === 'AbortError') return; } }
@@ -1318,7 +1521,8 @@ const CODE = {
   flutter: L => L.map(c => `const ${camel(c.key)} = Color(0xFF${c.hex.slice(1)});`).join('\n'),
 };
 function openExport(o) {
-  const L = keyed(o.colors.map(c => ({ hex: c.hex, name: c.name, no: c.no, source: c.source })));
+  o = { ...o, title: T(o.title) };
+  const L = keyed(o.colors.map(c => ({ hex: c.hex, name: T(c.name), no: c.no, source: c.source })));
   const st = { moreCode: false, moreDl: false };
   const one = L.length === 1;
   const render = () => `
@@ -1474,7 +1678,7 @@ async function makePDF(L, title) {
     const W = 1240, H = 1754, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'), m = 96;
     x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
     x.fillStyle = '#262624'; x.font = `400 30px ${DS}`; x.fillText(SHARE_NAME, m, m + 26);
-    x.fillStyle = '#86837B'; x.font = `400 20px ${TH}`; x.textAlign = 'right'; x.fillText(`Color spec · ${new Date().toLocaleDateString('th-TH', { dateStyle: 'medium' })} · หน้า ${pg + 1}/${pagesN}`, W - m, m + 24); x.textAlign = 'left';
+    x.fillStyle = '#86837B'; x.font = `400 20px ${TH}`; x.textAlign = 'right'; x.fillText(`Color spec · ${new Date().toLocaleDateString(LOC(), { dateStyle: 'medium' })} · ${T(`หน้า ${pg + 1}/${pagesN}`)}`, W - m, m + 24); x.textAlign = 'left';
     x.fillStyle = '#262624'; x.font = `600 46px ${TH}`; x.fillText(title, m, m + 112, W - m * 2);
     x.fillStyle = '#E8432B'; x.fillRect(m, m + 138, 70, 5);
     L.slice(pg * per, pg * per + per).forEach((c, i) => {
@@ -1486,7 +1690,7 @@ async function makePDF(L, title) {
       [[`RGB  ${I.sRgb}`, `CMYK ≈  ${I.sCmyk}`], [`Lab D50  ${I.sLab}`, `LCh  ${I.sLch}`]].forEach((row, j) => row.forEach((t, k) => x.fillText(t, m + 370 + k * 330, y + 128 + j * 34)));
     });
     x.fillStyle = '#86837B'; x.font = `400 18px ${TH}`;
-    x.fillText('CMYK แปลงจาก sRGB แบบทั่วไป (ไม่ผ่าน ICC) · ใช้ค่า Lab D50 เทียบกับโรงพิมพ์ · ควรขอปรู๊ฟสีจริงก่อนพิมพ์', m, H - m + 20);
+    x.fillText(T('CMYK แปลงจาก sRGB แบบทั่วไป (ไม่ผ่าน ICC) · ใช้ค่า Lab D50 เทียบกับโรงพิมพ์ · ควรขอปรู๊ฟสีจริงก่อนพิมพ์'), m, H - m + 20);
     if (pg) pdf.addPage();
     pdf.addImage(cv.toDataURL('image/jpeg', .92), 'JPEG', 0, 0, 210, 297);
   }
@@ -1496,7 +1700,7 @@ async function makePDF(L, title) {
 /* =========================================================
    Boot
    ========================================================= */
-updCal(); placeRet(); checkIncoming();
+updCal(); placeRet(); checkIncoming(); mountLang();
 window.addEventListener('hashchange', checkIncoming);
 if ('serviceWorker' in navigator && window.isSecureContext && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 save();
